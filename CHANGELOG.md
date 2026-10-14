@@ -1,0 +1,23 @@
+# Changelog
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0.0, minor versions may change the generated schemas
+or the API (annotations).
+
+## [Unreleased]
+
+## [0.1.3] - 2026-10-18
+First release, published as `com.vectornorthsystems:json-schema-annotations` and `com.vectornorthsystems:json-schema-ksp`.
+
+### Added
+- `@SchemaRoot`, which generates a function in the class's package that returns the class's JSON Schema as a
+  string. The function is `get${ClassName}Schema()` by default, or the name set by `@SchemaRoot(functionName)`.
+- Schemas for primitives, strings, enums, unsigned numbers, `Char`, arrays, collections, maps with `String` keys and
+  nested classes, following the subset of JSON Schema that Gemini supports.
+- Nullable types allow `null`. Primary constructor parameters without a default are required, and `@SchemaRequired`
+  makes a property required even when it has a default.
+- Type parameters resolved per use, recursive classes through `$ref` and `$defs`, and a nesting limit of 32 objects.
+- Annotations for `title`, `description`, `format`, `minimum`, `maximum`, `minItems`, `maxItems` and `prefixItems`.
+- Build errors, pointing at the declaration, for unsupported types, misplaced annotations, invalid function names and
+  function names already generated in the package.

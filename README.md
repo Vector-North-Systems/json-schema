@@ -1,0 +1,283 @@
+# Kotlin JSON Schema Generator
+Generates a [JSON Schema](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time, using
+[KSP](https://kotlinlang.org/docs/ksp-overview.html).
+
+JSON Schemas are a powerful standard to define the structure and rules of JSON data. They are useful, for example, to get structured output from generative AI models.
+The schemas produced by this library follow the subset of JSON Schema
+that [Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support). Although the schemas supported by other major AI providers may be added in future versions.
+
+## Installation
+Apply the [KSP plugin](https://github.com/google/ksp/releases) that matches your Kotlin version, then add the annotations
+and the processor:
+
+```kotlin
+plugins {
+    id("com.google.devtools.ksp") version "<ksp-version>"
+}
+
+dependencies {
+    implementation("com.vectornorthsystems:json-schema-annotations:0.1.3")
+    ksp("com.vectornorthsystems:json-schema-ksp:0.1.3")
+}
+```
+
+Both artifacts are on Maven Central. Requires JDK 17 or later.
+
+## Usage
+For example, consider the following class:
+```kotlin
+@SchemaRoot
+data class Complex(
+    val real: Double,
+    val imaginary: Double,
+)
+```
+
+`@SchemaRoot` marks the class for processing, which generates the following function in the same package:
+
+```kotlin
+fun getComplexSchema(): String {
+    return """{"type":"object","properties":{"real":{"type":"number"},"imaginary":{"type":"number"}},"required":["real","imaginary"]}"""
+}
+```
+
+The schemas are minified. The examples below are formatted for readability, so the one above reads:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "real": {"type": "number"},
+    "imaginary": {"type": "number"}
+  },
+  "required": ["real", "imaginary"]
+}
+```
+
+To choose the function's name, use `@SchemaRoot(functionName = "complexJsonSchema")`.
+
+The schema follows the structure and types of the class, including nullability. Constructor parameters without a
+default are required, since a decoder can't build the object without them, and properties with a default are optional.
+See [Required and nullable properties](#required-and-nullable-properties). Another example:
+```kotlin
+data class Ingredient(
+    val name: String
+)
+
+@SchemaRoot
+data class Recipe(
+    val instructions: String,
+    val ingredients: List<Ingredient>,
+    val isColdDish: Boolean? = null
+)
+```
+Produces the following schema. `isColdDish` allows `null`, and the AI model may leave it out, since it has a default:
+```json
+{
+  "type": "object",
+  "properties": {
+    "instructions": {"type": "string"},
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"}
+        },
+        "required": ["name"]
+      }
+    },
+    "isColdDish": {"type": ["boolean", "null"]}
+  },
+  "required": ["instructions", "ingredients"]
+}
+```
+
+Most primitive and common collection types are supported, see [Types](#types) for how each one is mapped.
+
+Annotations add descriptions and constraints, see [Annotations](#annotations) for the full list:
+```kotlin
+@SchemaRoot
+data class Event(
+    @SchemaTitle("Name")
+    @SchemaDescription("The name of the event, as advertised")
+    val name: String,
+
+    val notes: String? = null,
+
+    @SchemaFormat(SchemaFormat.Format.DATE_TIME)
+    val startsAt: String,
+
+    @SchemaMinimum(1.0)
+    @SchemaMaximum(4.5)
+    val rating: Double,
+
+    @SchemaMinimum(0.0)
+    val attendees: Int = 0,
+
+    @SchemaMinItems(1)
+    @SchemaMaxItems(20)
+    val speakers: List<String>
+)
+```
+Produces:
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "description": "The name of the event, as advertised",
+      "type": "string"
+    },
+    "notes": {"type": ["string", "null"]},
+    "startsAt": {"type": "string", "format": "date-time"},
+    "rating": {"type": "number", "minimum": 1, "maximum": 4.5},
+    "attendees": {"type": "integer", "minimum": 0},
+    "speakers": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "maxItems": 20
+    }
+  },
+  "required": ["name", "startsAt", "rating", "speakers"]
+}
+```
+These examples are checked by `ReadmeTest` in `json-schema-tests`, so update both together.
+
+### Required and nullable properties
+Nullable and optional mean different things: `String?` allows an explicit JSON `null`, while an optional field can be
+left out entirely. The Kotlin class already expresses both. Nullability decides whether the schema allows `null`, and the
+default decides whether the field is required:
+
+| Kotlin                                    | Schema                                   | Field missing: kotlinx.serialization        | Field missing: Moshi, Jackson |
+|-------------------------------------------|------------------------------------------|---------------------------------------------|-------------------------------|
+| `val notes: String`                       | Required, `"type": "string"`             | Fails                                       | Fails                         |
+| `val notes: String?`                      | Required, `"type": ["string", "null"]`   | Fails, unless `explicitNulls = false`       | `null`                        |
+| `val notes: String = ""`                  | Optional, `"type": "string"`             | `""`                                        | `""`                          |
+| `val notes: String? = null`               | Optional, `"type": ["string", "null"]`   | `null`                                      | `null`                        |
+| `@SchemaRequired val notes: String = ""`  | Required, `"type": "string"`             | `""`                                        | `""`                          |
+
+When the AI provider enforces the schema, a required field is always in the response, so a decoder never has to fill
+in a missing one. Required and nullable (`String?` without a default) makes the AI model decide on `null` explicitly, rather than leave the field
+out.
+
+The kotlinx.serialization column has been verified. The Moshi and Jackson columns describe their documented
+behavior, and will be checked by tests (see [Next Features](#next-features)).
+
+Use `@SchemaRequired` for a property whose default is only a convenience for your own code, when the AI model should
+still produce it. Moshi and Jackson need their Kotlin support (Moshi's Kotlin adapters, `jackson-module-kotlin`) to
+use defaults. Gson ignores Kotlin defaults and nullability, so a missing field becomes `null`, even in a non-null
+property.
+
+## Rules and Exceptions
+
+Annotate a class with `@SchemaRoot` and call the generated `get${ClassName}Schema()`, in the same package, or the
+function named by `@SchemaRoot(functionName = "...")`. Nested classes with the same name in the same package need
+different function names. The rules below describe the schema it returns.
+
+### Types
+| Kotlin                                                            | Schema                                                 |
+|-------------------------------------------------------------------|--------------------------------------------------------|
+| `Int`, `Long`, `Short`, `Byte`                                    | `integer`                                              |
+| `UInt`, `ULong`, `UShort`, `UByte`                                | `integer` with `minimum` 0                             |
+| `Float`, `Double`                                                 | `number`                                               |
+| `Boolean`                                                         | `boolean`                                              |
+| `String`, `Char`                                                  | `string`                                               |
+| Enum classes                                                      | `string` with `enum` set to the entry names            |
+| `Array`, `List`, `Set`, `Collection`, `Iterable` (mutable or not) | `array`, with `items` from the element type      |
+| `IntArray`, `BooleanArray` and the other primitive arrays         | `array` of the matching primitive                      |
+| `Map<String, V>` and `MutableMap<String, V>`                      | `object` with `additionalProperties` from `V`          |
+| Other classes                                                     | `object` with their `properties`                       |
+
+### Properties
+- Only properties with a backing field are included: computed and delegated properties aren't data, so they're left out.
+  Inherited properties are included.
+- Property names are the Kotlin names. See [Next Features](#next-features) for plans to extend this.
+- Primary constructor parameters without a default are required, matched to properties by name in the class being
+  described, so an inherited property is required when the subclass's constructor takes it without a default. See
+  [Known Issues](#known-issues) for classes from compiled libraries.
+- Properties with a default or declared in the class body are optional, unless annotated with `@SchemaRequired`.
+- Nullable types allow `null` (`"type": ["string", "null"]`), which is independent of a property being required.
+- Type aliases are resolved to the type they stand for, keeping their nullability.
+
+### Generics and recursion
+- Type parameters take the type arguments of each use, so `Box<String>` and `Box<Int>` get different schemas.
+  `@SchemaRoot` classes can't have type parameters.
+- A root class that contains itself is referenced with `"$ref": "#"`. A nested class that contains itself is defined
+  once in `$defs` and referenced with `"$ref": "#/$defs/<Name>"`. A nullable reference becomes `"anyOf": [{"$ref": ...}, {"type": "null"}]`.
+- Objects can nest at most 32 deep, which catches generic types that grow without repeating, e.g. a `Box<T>` holding a
+  `Box<List<T>>`.
+
+### Annotations
+| Annotation                                   | Applies to                    | Keyword/Notes               |
+|----------------------------------------------|-------------------------------|-----------------------------|
+| `@SchemaRoot`                                | A class without parameters    | Entry point of the schema   |
+| `@SchemaTitle`, `@SchemaDescription`         | Any property                  | `title`, `description`      |
+| `@SchemaRequired`                            | Any property                  | Added to `required`, even with a default |
+| `@SchemaFormat`                              | `String` (not enums)          | `format`: `date-time`, `date` or `time` |
+| `@SchemaMinimum`, `@SchemaMaximum`           | Integers and numbers          | `minimum`, `maximum` (override the 0 of unsigned types) |
+| `@SchemaMinItems`, `@SchemaMaxItems`         | Collections                   | `minItems`, `maxItems`      |
+| `@SchemaPrefixItems`                         | Collections                   | `prefixItems`               |
+| `@SchemaExclude`                             | Any property                  | Excludes the property from the resulting schema |
+
+`@SchemaPrefixItems` types should fit the collection's element type, or the response can't be decoded into it: a
+`List<String>` can't hold the `Int` that `@SchemaPrefixItems(String::class, Int::class)` asks for.
+
+### Errors
+These fail the build, pointing at the property:
+- An annotation on a property it doesn't apply to, a minimum greater than its maximum, or a negative
+  `@SchemaMinItems` or `@SchemaMaxItems`.
+- NaN or either infinity in `@SchemaMinimum` or `@SchemaMaximum`; bounds must be finite.
+- `Any`, an unresolved type parameter, or a map key that isn't `String`.
+- Interfaces, sealed classes and abstract classes, until `anyOf` is supported.
+
+These fail the build, pointing at the class:
+- A root with type parameters, or an enum, interface, annotation class, sealed class or abstract class used as a root.
+  Roots must be concrete classes or objects; enum properties remain supported.
+- A `functionName` that isn't a valid Kotlin identifier, or a function name already generated in the package.
+
+Java classes aren't mapped yet, so they're described by their private fields or fail (see below).
+
+## Known Issues
+- **Generated filename collisions.** Custom function names such as `foo` and `Foo` both produce `Foo.kt`, causing
+  a build failure. Choose names that differ beyond capitalization of the first character.
+- **Classes from compiled libraries.** Required properties come from constructor defaults, which haven't been tested
+  for classes from another module or a library jar. If KSP can't read their defaults, every constructor parameter is
+  required. Decoding still works, but the AI model can't leave out fields that have a default. Until this is
+  verified, check the generated schema, or describe these classes with your own types.
+- **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
+  reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
+  for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
+- **Schema expansion.** Repeated nested types are expanded independently. A small set of Kotlin classes with branching references
+  can generate exponentially large output even below the 32-object depth limit, consuming substantial build time
+  and memory. Keep class graphs small until a total output budget or reuse of definitions is implemented.
+
+## Next Features
+1. Serialization annotations support.
+This includes using the names the decoder expects, e.g. kotlinx.serialization's `@SerialName`, Moshi's `@Json(name)`,
+Gson's `@SerializedName` or Jackson's `@JsonProperty`, and leaving out `@Transient` properties.
+Depends on choosing which decoder(s) to support.
+Along with it, decoding tests in `json-schema-tests`: a shared model class decoded with each supported decoder, to
+check the names and the missing-field behavior in [Required and nullable properties](#required-and-nullable-properties).
+So far, that behavior has only been verified with kotlinx.serialization.
+
+2. `anyOf` support (through Sealed Classes)
+Each subclass becomes an option in `anyOf`, plus a discriminator property (e.g. `"type"`) so the response can be decoded.
+The discriminator's key and values depend on the decoder (kotlinx.serialization uses `"type"` and the qualified class
+name, or `@SerialName` / `@JsonClassDiscriminator`).
+Later: `@SchemaSubtypes` for interfaces and abstract classes, whose subclasses the compiler doesn't know.
+
+3. Better Java types support.
+Java classes are currently described by their private fields, e.g. `java.lang.Integer` becomes an object with a `value`
+property, and `ArrayList` / `HashMap` fail. Map the common ones instead:
+   - Boxed primitives (`java.lang.Integer`, `java.lang.Long`, ...) to their primitive types.
+   - `java.util` collections and maps (`ArrayList`, `HashMap`, `LinkedHashMap`, ...) to arrays and objects.
+   - `java.time` types (`LocalDate`, `LocalTime`, `Instant`, ...) to strings with `format` `date`, `time` or `date-time`.
+   - `UUID`, `BigDecimal` and `BigInteger`, which are usually serialized as strings or numbers.
+
+4. Check `$defs` against the Gemini API. Its docs only show `"$ref": "#"`, while nested recursive classes use `$defs`.
+
+5. OpenAI and Anthropic schemas.
+Both use JSON Schema for structured output, but each accepts a different subset than Gemini.
