@@ -1,0 +1,3 @@
+/.github/ @eddielo-stack
+*.gradle.kts @eddielo-stack
+gradle.properties @eddielo-stack
