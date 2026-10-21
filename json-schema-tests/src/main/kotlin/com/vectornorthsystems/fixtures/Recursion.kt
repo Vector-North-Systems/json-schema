@@ -24,3 +24,12 @@ data class Employee(
     val reports: List<Employee> = emptyList(),
     val manager: Employee? = null,
 )
+
+/**
+ * Identical Employee classes should be produced.
+ */
+@SchemaRoot
+data class Org(
+    val ceo: Employee,
+    val cto: Employee
+)

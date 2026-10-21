@@ -1,10 +1,24 @@
 # Kotlin JSON Schema Generator
+[![Maven Central](https://img.shields.io/maven-central/v/com.vectornorthsystems/json-schema-annotations)](https://central.sonatype.com/artifact/com.vectornorthsystems/json-schema-annotations)
+[![CI](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.txt)
+
 Generates a [JSON Schema](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time, using
 [KSP](https://kotlinlang.org/docs/ksp-overview.html).
 
-JSON Schemas are a powerful standard to define the structure and rules of JSON data. They are useful, for example, to get structured output from generative AI models.
-The schemas produced by this library follow the subset of JSON Schema
-that [Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support). Although the schemas supported by other major AI providers may be added in future versions.
+JSON Schema is a standard for describing the structure and rules of JSON data. One of its main uses is structured
+output from generative AI models: you send a schema with the request, and the model's response matches it. The schemas
+produced by this library follow the subset of JSON Schema
+that [Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support). Support for the
+subsets of other major AI providers is planned, see [Roadmap](#roadmap).
+
+Your Kotlin classes are the single source of truth. Change them as your needs change (add a property, nest a new
+class, make a field optional) and the next build regenerates a matching schema. The model's response decodes straight
+back into the same classes, so there's no hand-written schema to keep in sync with your code.
+
+Because the schemas are generated at compile time, there's no reflection and no runtime dependency: each schema is a
+string literal returned by a generated function. Mistakes, like a constraint on the wrong type or a type that can't be
+described, fail the build and point at the property.
 
 ## Installation
 Apply the [KSP plugin](https://github.com/google/ksp/releases) that matches your Kotlin version, then add the annotations
@@ -21,7 +35,7 @@ dependencies {
 }
 ```
 
-Both artifacts are on Maven Central. Requires JDK 17 or later.
+Both artifacts are on Maven Central. Requires JDK 17 or later. Built and tested with Kotlin 2.4.20 and KSP 2.3.10.
 
 ## Usage
 For example, consider the following class:
@@ -164,14 +178,71 @@ in a missing one. Required and nullable (`String?` without a default) makes the 
 out.
 
 The kotlinx.serialization column has been verified. The Moshi and Jackson columns describe their documented
-behavior, and will be checked by tests (see [Next Features](#next-features)).
+behavior, and will be checked by tests (see [Roadmap](#roadmap)).
 
 Use `@SchemaRequired` for a property whose default is only a convenience for your own code, when the AI model should
 still produce it. Moshi and Jackson need their Kotlin support (Moshi's Kotlin adapters, `jackson-module-kotlin`) to
 use defaults. Gson ignores Kotlin defaults and nullability, so a missing field becomes `null`, even in a non-null
 property.
 
-## Rules and Exceptions
+## Sending the schema to Gemini
+The generated function returns the schema as a JSON string, ready to put in a request. With Gemini's
+[Interactions API](https://ai.google.dev/gemini-api/docs/interactions/structured-output), it goes in
+`response_format.schema`. This example, adapted from
+[`Library.kt`](json-schema-tests/src/main/kotlin/Library.kt), uses Ktor and kotlinx.serialization:
+
+```kotlin
+@Serializable
+data class Book(
+    @SchemaDescription("The title of the book")
+    val title: String,
+
+    @SchemaMaxItems(3)
+    val authors: List<String> = emptyList(),
+
+    @SchemaMinimum(1.0)
+    @SchemaMaximum(5.0)
+    val rating: Double? = null,
+)
+
+@Serializable
+@SchemaRoot
+data class Library(
+    val books: List<Book>,
+)
+
+val request = buildJsonObject {
+    put("model", "gemini-3.8-flash")
+    put("input", "Classify the following books: ...")
+    putJsonObject("response_format") {
+        put("type", "text")
+        put("mime_type", "application/json")
+        // Parsed, so the schema is sent as a JSON object rather than a quoted string.
+        put("schema", Json.parseToJsonElement(getLibrarySchema()))
+    }
+}
+
+val response = client.post("https://generativelanguage.googleapis.com/v1beta/interactions") {
+    header("x-goog-api-key", System.getenv("GEMINI_API_KEY"))
+    header("Api-Revision", "2026-05-20")
+    contentType(ContentType.Application.Json)
+    setBody(request.toString())
+}
+```
+
+The model's answer is JSON that matches the schema, in the text of the response's `model_output` steps
+([`Main.kt`](json-schema-tests/src/main/kotlin/Main.kt) shows how to read it). It decodes straight into the root class:
+
+```kotlin
+val library = Json.decodeFromString<Library>(outputText)
+```
+
+Change `Book` or `Library`, and the schema, the request and the decoding all follow on the next build.
+
+With the `generateContent` API, pass the schema as `generationConfig.responseJsonSchema`, with `responseMimeType` set
+to `application/json`. Don't use `responseSchema`: it takes Gemini's OpenAPI-based `Schema` object, a different format.
+
+## Reference
 
 Annotate a class with `@SchemaRoot` and call the generated `get${ClassName}Schema()`, in the same package, or the
 function named by `@SchemaRoot(functionName = "...")`. Nested classes with the same name in the same package need
@@ -194,7 +265,7 @@ different function names. The rules below describe the schema it returns.
 ### Properties
 - Only properties with a backing field are included: computed and delegated properties aren't data, so they're left out.
   Inherited properties are included.
-- Property names are the Kotlin names. See [Next Features](#next-features) for plans to extend this.
+- Property names are the Kotlin names. See [Roadmap](#roadmap) for plans to extend this.
 - Primary constructor parameters without a default are required, matched to properties by name in the class being
   described, so an inherited property is required when the subclass's constructor takes it without a default. See
   [Known Issues](#known-issues) for classes from compiled libraries.
@@ -205,15 +276,15 @@ different function names. The rules below describe the schema it returns.
 ### Generics and recursion
 - Type parameters take the type arguments of each use, so `Box<String>` and `Box<Int>` get different schemas.
   `@SchemaRoot` classes can't have type parameters.
-- A root class that contains itself is referenced with `"$ref": "#"`. A nested class that contains itself is defined
-  once in `$defs` and referenced with `"$ref": "#/$defs/<Name>"`. A nullable reference becomes `"anyOf": [{"$ref": ...}, {"type": "null"}]`.
+- A root class that contains itself is referenced with `"$ref": "#"`. A nested class that contains itself, or is
+  used in more than one place, is defined once in `$defs` and referenced with `"$ref": "#/$defs/<Name>"`. A nullable reference becomes `"anyOf": [{"$ref": ...}, {"type": "null"}]`.
 - Objects can nest at most 32 deep, which catches generic types that grow without repeating, e.g. a `Box<T>` holding a
   `Box<List<T>>`.
 
 ### Annotations
 | Annotation                                   | Applies to                    | Keyword/Notes               |
 |----------------------------------------------|-------------------------------|-----------------------------|
-| `@SchemaRoot`                                | A class without parameters    | Entry point of the schema   |
+| `@SchemaRoot`                                | A class without type parameters | Entry point of the schema |
 | `@SchemaTitle`, `@SchemaDescription`         | Any property                  | `title`, `description`      |
 | `@SchemaRequired`                            | Any property                  | Added to `required`, even with a default |
 | `@SchemaFormat`                              | `String` (not enums)          | `format`: `date-time`, `date` or `time` |
@@ -225,7 +296,7 @@ different function names. The rules below describe the schema it returns.
 `@SchemaPrefixItems` types should fit the collection's element type, or the response can't be decoded into it: a
 `List<String>` can't hold the `Int` that `@SchemaPrefixItems(String::class, Int::class)` asks for.
 
-### Errors
+## Build errors
 These fail the build, pointing at the property:
 - An annotation on a property it doesn't apply to, a minimum greater than its maximum, or a negative
   `@SchemaMinItems` or `@SchemaMaxItems`.
@@ -238,7 +309,7 @@ These fail the build, pointing at the class:
   Roots must be concrete classes or objects; enum properties remain supported.
 - A `functionName` that isn't a valid Kotlin identifier, or a function name already generated in the package.
 
-Java classes aren't mapped yet, so they're described by their private fields or fail (see below).
+Java classes aren't mapped yet, so they're described by their private fields or fail (see [Roadmap](#roadmap)).
 
 ## Known Issues
 - **Generated filename collisions.** Custom function names such as `foo` and `Foo` both produce `Foo.kt`, causing
@@ -250,34 +321,23 @@ Java classes aren't mapped yet, so they're described by their private fields or 
 - **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
   reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
   for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
-- **Schema expansion.** Repeated nested types are expanded independently. A small set of Kotlin classes with branching references
-  can generate exponentially large output even below the 32-object depth limit, consuming substantial build time
-  and memory. Keep class graphs small until a total output budget or reuse of definitions is implemented.
+- **Value classes**. A `@JvmInline value class UserId(val value: String)` becomes an object with a value property,
+  but kotlinx.serialization encodes it as the bare underlying value.
 
-## Next Features
-1. Serialization annotations support.
-This includes using the names the decoder expects, e.g. kotlinx.serialization's `@SerialName`, Moshi's `@Json(name)`,
-Gson's `@SerializedName` or Jackson's `@JsonProperty`, and leaving out `@Transient` properties.
-Depends on choosing which decoder(s) to support.
-Along with it, decoding tests in `json-schema-tests`: a shared model class decoded with each supported decoder, to
-check the names and the missing-field behavior in [Required and nullable properties](#required-and-nullable-properties).
-So far, that behavior has only been verified with kotlinx.serialization.
+## Roadmap
+Planned, roughly in order:
 
-2. `anyOf` support (through Sealed Classes)
-Each subclass becomes an option in `anyOf`, plus a discriminator property (e.g. `"type"`) so the response can be decoded.
-The discriminator's key and values depend on the decoder (kotlinx.serialization uses `"type"` and the qualified class
-name, or `@SerialName` / `@JsonClassDiscriminator`).
-Later: `@SchemaSubtypes` for interfaces and abstract classes, whose subclasses the compiler doesn't know.
-
-3. Better Java types support.
-Java classes are currently described by their private fields, e.g. `java.lang.Integer` becomes an object with a `value`
-property, and `ArrayList` / `HashMap` fail. Map the common ones instead:
-   - Boxed primitives (`java.lang.Integer`, `java.lang.Long`, ...) to their primitive types.
-   - `java.util` collections and maps (`ArrayList`, `HashMap`, `LinkedHashMap`, ...) to arrays and objects.
-   - `java.time` types (`LocalDate`, `LocalTime`, `Instant`, ...) to strings with `format` `date`, `time` or `date-time`.
-   - `UUID`, `BigDecimal` and `BigInteger`, which are usually serialized as strings or numbers.
-
-4. Check `$defs` against the Gemini API. Its docs only show `"$ref": "#"`, while nested recursive classes use `$defs`.
-
-5. OpenAI and Anthropic schemas.
-Both use JSON Schema for structured output, but each accepts a different subset than Gemini.
+1. **Serialization names.** Use the names the decoder expects and leave out `@Transient` properties, starting with
+   kotlinx.serialization's `@SerialName`, then Moshi's `@Json(name)`, Gson's `@SerializedName` and Jackson's
+   `@JsonProperty`. Decoding tests will verify the missing-field behavior in
+   [Required and nullable properties](#required-and-nullable-properties) for each supported decoder.
+2. **Sealed classes through `anyOf`.** Each subclass becomes an option, with a discriminator property so the response
+   can be decoded. Later, `@SchemaSubtypes` for interfaces and abstract classes, whose subclasses the compiler doesn't
+   know.
+3. **Java types.** Boxed primitives, `java.util` collections and maps, `java.time` types (as strings with a `format`),
+   `UUID`, `BigDecimal` and `BigInteger`.
+4. **OpenAI and Anthropic schemas.** Both use JSON Schema for structured output, but each accepts a different subset
+   than Gemini.
+5. **Property order**. Gemini 2.5 and later keep the schema's key order in the output, so declaration order shapes
+    generation (e.g. reasoning before answer). We need to document what's the library guarantee regarding order,
+    plan to address this.

@@ -30,6 +30,12 @@ internal class SchemaVisitor(
     private val inProgress = mutableMapOf<String, ObjectNode>()
 
     /**
+     * Finished types, for memoization purposes.
+     * This ensures a new ref is not created for the same type.
+     */
+    private val built = mutableMapOf<String, ObjectNode>()
+
+    /**
      * Names taken in `$defs`. Two classes with the same simple name get distinct definitions.
      */
     private val defNames = mutableSetOf<String>()
@@ -61,17 +67,7 @@ internal class SchemaVisitor(
     private fun objectSchemaFor(declaration: KSClassDeclaration, type: KSType, isRoot: Boolean = false): Node {
         // Check if this type is already in progress.
         val key = type.key()
-        inProgress[key]?.let { target ->
-            if (!target.recursive) {
-                // Mark as recursive and give a def name (except root, which is known as `#`)
-                target.recursive = true
-                if (!target.isRoot) {
-                    target.defName = generateUniqueDefName(target.name)
-                }
-            }
-
-            return RefNode(target)
-        }
+        (inProgress[key] ?: built[key])?.let { return referenceTo(it) }
 
         // Generic types can nest without ever repeating, e.g. a Box<T> holding a Box<List<T>>.
         if (inProgress.size >= MAX_DEPTH) {
@@ -99,8 +95,23 @@ internal class SchemaVisitor(
                 )
             }
         inProgress.remove(key)
+        built[key] = objectNode
 
         return objectNode
+    }
+
+    /**
+     * Marks [target] as referenced, naming it in `$defs` unless it's the root (`#`), and points to it.
+     */
+    private fun referenceTo(target: ObjectNode): RefNode {
+        if (!target.referenced) {
+            target.referenced = true
+            if (!target.isRoot) {
+                target.defName = generateUniqueDefName(target.name)
+            }
+        }
+
+        return RefNode(target)
     }
 
     /**

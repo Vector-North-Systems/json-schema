@@ -40,7 +40,7 @@ internal class ObjectNode(
     /**
      * Whether a property refers back to this object, so it's written once and referenced with `$ref`.
      */
-    var recursive: Boolean = false
+    var referenced: Boolean = false
 
     /**
      * The name of this object in `$defs`, unique within the schema.
