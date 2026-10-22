@@ -59,7 +59,7 @@ private fun assertCopy(original: Node, copy: Node, copies: MutableMap<ObjectNode
             copies[original] = copy
             assertEquals(original.name, copy.name)
             assertEquals(original.isRoot, copy.isRoot)
-            assertEquals(original.recursive, copy.recursive)
+            assertEquals(original.referenced, copy.referenced)
             assertEquals(original.defName, copy.defName)
             assertEquals(original.properties.size, copy.properties.size)
             original.properties.zip(copy.properties).forEach { (o, c) -> assertCopy(o, c, copies) }
@@ -113,7 +113,7 @@ class BaseTransformerImplTest {
      */
     private fun tree(): ObjectNode {
         val root = ObjectNode(name = "Game", isRoot = true).apply {
-            recursive = true
+            referenced = true
             defName = "GameDef"
         }.common()
 
@@ -217,7 +217,7 @@ class BaseTransformerImplTest {
     @Test
     fun transformObjectNode() {
         val source = ObjectNode(name = "Player", isRoot = true).apply {
-            recursive = true
+            referenced = true
             defName = "Player2"
             properties += property("name", PrimitiveNode(PrimitiveType.STRING))
             properties += property("score", PrimitiveNode(PrimitiveType.INTEGER), required = true)
@@ -230,7 +230,7 @@ class BaseTransformerImplTest {
 
     @Test
     fun transformRefNode() {
-        val node = ObjectNode(name = "Node").apply { recursive = true }
+        val node = ObjectNode(name = "Node").apply { referenced = true }
         val ref = RefNode(node).common()
         node.properties += property("children", ArrayNode(ref))
 

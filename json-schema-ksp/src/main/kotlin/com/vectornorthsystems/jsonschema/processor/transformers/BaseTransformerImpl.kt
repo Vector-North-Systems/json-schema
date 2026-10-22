@@ -13,7 +13,7 @@ import java.util.IdentityHashMap
 internal open class BaseTransformerImpl : Transformer {
 
     /**
-     * The copy of each object, by the original. A [RefNode] points back at an object further up the tree, which is
+     * The copy of each object, by the original. A [RefNode] points back at an object further up the tree or a sibling, which is
      * already copied when the reference is reached.
      */
     private val copies = IdentityHashMap<ObjectNode, ObjectNode>()
@@ -70,7 +70,7 @@ internal open class BaseTransformerImpl : Transformer {
             name = node.name,
             isRoot = node.isRoot
         ).apply {
-            recursive = node.recursive
+            referenced = node.referenced
             defName = node.defName
         }.copyCommon(node)
 

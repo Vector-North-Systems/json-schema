@@ -7,6 +7,12 @@ or the API (annotations).
 
 ## [Unreleased]
 
+### Fixed
+- The Schema Expansion issue from the known issues.
+
+### Added
+- Any class used twice now moves to $defs, not only recursive ones. This yields smaller schemas that save tokens.
+
 ## [0.1.3] - 2026-10-18
 First release, published as `com.vectornorthsystems:json-schema-annotations` and `com.vectornorthsystems:json-schema-ksp`.
 

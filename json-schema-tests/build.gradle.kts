@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
     application
 }
@@ -16,11 +17,11 @@ dependencies {
     implementation(project(":json-schema-annotations"))
     implementation("io.ktor:ktor-client-core:3.6.0")
     implementation("io.ktor:ktor-client-java:3.6.0")
+    // Builds the Gemini request and decodes the reply in Main.kt; the tests also parse the generated schemas with it.
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     ksp(project(":json-schema-ksp"))
     testImplementation(kotlin("test"))
-    // Parses the generated schemas, no serialization plugin needed.
-    testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }
 
 kotlin {

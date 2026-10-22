@@ -79,7 +79,7 @@ private class SchemaWriter {
 
             is ObjectNode -> {
                 // A recursive object is defined once in $defs, so even its first occurrence is a reference.
-                if (node.recursive && !node.isRoot) {
+                if (node.referenced && !node.isRoot) {
                     writeRef(node, node.nullable)
                 } else {
                     writeObject(node, node.nullable)
