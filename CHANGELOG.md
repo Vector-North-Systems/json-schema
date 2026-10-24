@@ -13,6 +13,10 @@ or the API (annotations).
 ### Added
 - Any class used twice now moves to $defs, not only recursive ones. This yields smaller schemas that save tokens.
 
+### Deprecated
+- The `@SchemaPrefixItems` annotation is deprecated and will be removed before 1.0. Models follow `prefixItems` and
+  produce arrays of mixed types, which a Kotlin collection can't hold, so the response fails to decode.
+
 ## [0.1.3] - 2026-10-18
 First release, published as `com.vectornorthsystems:json-schema-annotations` and `com.vectornorthsystems:json-schema-ksp`.
 

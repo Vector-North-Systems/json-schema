@@ -20,7 +20,8 @@ class SchemaTest {
 
     @Test
     fun `complex is simple`() {
-        assertSchema(expected ="""
+        assertSchema(
+            expected = """
             {
               "type": "object",
               "properties": {
@@ -28,7 +29,8 @@ class SchemaTest {
                 "imaginary": {"type": "number"}
               }
             }
-            """, actual = getComplexSchema())
+            """, actual = getComplexSchema()
+        )
     }
 
     @Test
@@ -272,19 +274,54 @@ class SchemaTest {
             {
               "type": "object",
               "properties": {
-                "name": {"title": "Name", "description": "Costs $5 \"or\" less", "type": "string"},
-                "notes": {"type": "string"},
-                "startsAt": {"type": "string", "format": "date-time"},
-                "rating": {"type": "number", "minimum": 1, "maximum": 4.5},
-                "attendees": {"type": "integer", "minimum": 0},
-                "speakers": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 20},
+                "name": {
+                  "title": "Name",
+                  "description": "Costs $5 \"or\" less",
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "startsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "rating": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 4.5
+                },
+                "attendees": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "speakers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "maxItems": 20
+                },
                 "location": {
                   "type": "array",
-                  "prefixItems": [{"type": "string"}, {"type": "integer"}],
-                  "items": {"type": "string"}
+                  "prefixItems": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ],
+                  "items": {
+                    "type": "string"
+                  }
                 }
               },
-              "required": ["name", "startsAt"]
+              "required": [
+                "name",
+                "startsAt"
+              ]
             }
             """,
             getEventSchema()
@@ -401,6 +438,29 @@ class SchemaTest {
         assertSchema(
             """{"type": "object", "properties": {"user": {"type": "string"}}}""",
             actual = getLoginRequestSchema()
+        )
+    }
+
+    @Test
+    fun `body properties must be initialized, so they are optional`() {
+        assertSchema(
+            expected = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "length": {
+                      "type": "integer"
+                    },
+                    "mass": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "length"
+                  ]
+                }
+                """.trimIndent(),
+            actual = getBodyPropertiesSchema()
         )
     }
 }

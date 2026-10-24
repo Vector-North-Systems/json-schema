@@ -37,8 +37,6 @@ data class Section(
  * An example of the whole round trip with Gemini structured output.
  * Exercises `$defs` beyond the root `"$ref": "#"` that Gemini's docs show, and is `@Serializable` so we can decode the response:
  *
- * Run it with a Gemini API key:
- *     GEMINI_API_KEY=... ./gradlew :json-schema-tests:run
  *
  * - [Person] isn't recursive, but is used in three places, so it's defined once in `$defs`. One of those places is
  *   inside another definition ([Section.reviewer]), so definitions reference each other.

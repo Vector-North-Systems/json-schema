@@ -1,12 +1,6 @@
 package com.vectornorthsystems.jsonschema.processor.writer
 
-import com.vectornorthsystems.jsonschema.processor.node.ArrayNode
-import com.vectornorthsystems.jsonschema.processor.node.MapNode
-import com.vectornorthsystems.jsonschema.processor.node.Node
-import com.vectornorthsystems.jsonschema.processor.node.ObjectNode
-import com.vectornorthsystems.jsonschema.processor.node.PrimitiveNode
-import com.vectornorthsystems.jsonschema.processor.node.PropertyNode
-import com.vectornorthsystems.jsonschema.processor.node.RefNode
+import com.vectornorthsystems.jsonschema.processor.node.*
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -22,7 +16,9 @@ internal val Node.schema: String
 private class SchemaWriter {
     private val builder = StringBuilder()
 
-    /** Recursive objects referenced so far, in the order they're met. */
+    /**
+     * Recursive objects referenced so far, in the order they're met.
+     */
     private val defs = mutableListOf<ObjectNode>()
 
     /**
@@ -39,7 +35,9 @@ private class SchemaWriter {
             var index = 0
             while (index < defs.size) {
                 val def = defs[index]
-                if (index > 0) builder.append(",")
+                if (index > 0) {
+                    builder.append(",")
+                }
                 builder.append("${def.defName.toJsonString()}:{")
                 // The definition itself is never null, only the places referencing it may be.
                 writeObject(def, nullable = false)
@@ -49,6 +47,7 @@ private class SchemaWriter {
             builder.append("}")
         }
         builder.append("}")
+
         return builder.toString()
     }
 
@@ -63,7 +62,9 @@ private class SchemaWriter {
                 if (node.prefixItems.isNotEmpty()) {
                     builder.append(",\"${ArrayProperties.PREFIX_ITEMS}\":[")
                     node.prefixItems.forEachIndexed { index, item ->
-                        if (index > 0) builder.append(",")
+                        if (index > 0) {
+                            builder.append(",")
+                        }
                         builder.append("{")
                         writeSchema(item)
                         builder.append("}")
@@ -122,7 +123,9 @@ private class SchemaWriter {
         writeType(Types.OBJECT, nullable)
         builder.append(",\"${ObjectProperties.PROPERTIES}\":{")
         context.properties.forEachIndexed { index, property ->
-            if (index > 0) builder.append(",")
+            if (index > 0) {
+                builder.append(",")
+            }
             builder.append("${property.name.toJsonString()}:{")
             writeSchema(property)
             builder.append("}")
