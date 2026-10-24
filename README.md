@@ -6,14 +6,15 @@
 Generates a [JSON Schema](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time, using
 [KSP](https://kotlinlang.org/docs/ksp-overview.html).
 
-JSON Schema is a standard for describing the structure and rules of JSON data. One of its main uses is structured
-output from generative AI models: you send a schema with the request, and the model's response matches it. The schemas
-produced by this library follow the subset of JSON Schema
+JSON Schema is a standard for describing the structure and rules of JSON data. One common use is structured output from
+generative AI models: you send a schema with the request, and the model produces JSON that matches it, allowing parsing
+the response, and often decoding it directly to classes.
+The schemas produced by this library follow the subset of JSON Schema
 that [Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support). Support for the
 subsets of other major AI providers is planned, see [Roadmap](#roadmap).
 
 Your Kotlin classes are the single source of truth. Change them as your needs change (add a property, nest a new
-class, make a field optional) and the next build regenerates a matching schema. The model's response decodes straight
+class, make a field optional) and the next build regenerates a matching schema. The model's response maps straight
 back into the same classes, so there's no hand-written schema to keep in sync with your code.
 
 Because the schemas are generated at compile time, there's no reflection and no runtime dependency: each schema is a
@@ -68,11 +69,12 @@ The schemas are minified. The examples below are formatted for readability, so t
 }
 ```
 
-To choose the function's name, use `@SchemaRoot(functionName = "complexJsonSchema")`.
+To choose the generated function's name, use `@SchemaRoot(functionName = "complexJsonSchema")`.
 
 The schema follows the structure and types of the class, including nullability. Constructor parameters without a
-default are required, since a decoder can't build the object without them, and properties with a default are optional.
+default are required, and properties with a default are optional.
 See [Required and nullable properties](#required-and-nullable-properties). Another example:
+
 ```kotlin
 data class Ingredient(
     val name: String
@@ -110,6 +112,7 @@ Produces the following schema. `isColdDish` allows `null`, and the AI model may 
 Most primitive and common collection types are supported, see [Types](#types) for how each one is mapped.
 
 Annotations add descriptions and constraints, see [Annotations](#annotations) for the full list:
+
 ```kotlin
 @SchemaRoot
 data class Event(
@@ -158,12 +161,13 @@ Produces:
   "required": ["name", "startsAt", "rating", "speakers"]
 }
 ```
-These examples are checked by `ReadmeTest` in `json-schema-tests`, so update both together.
+These examples are checked by `ReadmeTest` in `json-schema-tests`, check the code for more details.
 
 ### Required and nullable properties
-Nullable and optional mean different things: `String?` allows an explicit JSON `null`, while an optional field can be
-left out entirely. The Kotlin class already expresses both. Nullability decides whether the schema allows `null`, and the
-default decides whether the field is required:
+For the AI model, nullable and optional mean different things. A nullable field has `null` among its types, so the
+model can answer an explicit JSON `null`. An optional field is left out of `required`, so the model can leave it out
+of the response entirely. The Kotlin class already expresses both: nullability (`String?`) decides whether the schema
+allows `null`, and a default (`= ""`) decides whether the field is required:
 
 | Kotlin                                    | Schema                                   | Field missing: kotlinx.serialization        | Field missing: Moshi, Jackson |
 |-------------------------------------------|------------------------------------------|---------------------------------------------|-------------------------------|
@@ -174,10 +178,10 @@ default decides whether the field is required:
 | `@SchemaRequired val notes: String = ""`  | Required, `"type": "string"`             | `""`                                        | `""`                          |
 
 When the AI provider enforces the schema, a required field is always in the response, so a decoder never has to fill
-in a missing one. Required and nullable (`String?` without a default) makes the AI model decide on `null` explicitly, rather than leave the field
-out.
+in a missing one. Required and nullable (`String?` without a default) makes the AI model decide on `null` explicitly,
+rather than leave the field out.
 
-The kotlinx.serialization column has been verified. The Moshi and Jackson columns describe their documented
+The `kotlinx.serialization` column has been verified. The Moshi and Jackson columns describe their documented
 behavior, and will be checked by tests (see [Roadmap](#roadmap)).
 
 Use `@SchemaRequired` for a property whose default is only a convenience for your own code, when the AI model should
@@ -189,7 +193,7 @@ property.
 The generated function returns the schema as a JSON string, ready to put in a request. With Gemini's
 [Interactions API](https://ai.google.dev/gemini-api/docs/interactions/structured-output), it goes in
 `response_format.schema`. This example, adapted from
-[`Library.kt`](json-schema-tests/src/main/kotlin/Library.kt), uses Ktor and kotlinx.serialization:
+[`Library.kt`](json-schema-tests/src/main/kotlin/samples/Library.kt), uses `Ktor` and `kotlinx.serialization`:
 
 ```kotlin
 @Serializable
@@ -231,7 +235,7 @@ val response = client.post("https://generativelanguage.googleapis.com/v1beta/int
 ```
 
 The model's answer is JSON that matches the schema, in the text of the response's `model_output` steps
-([`Main.kt`](json-schema-tests/src/main/kotlin/Main.kt) shows how to read it). It decodes straight into the root class:
+([`Library.kt`](json-schema-tests/src/main/kotlin/samples/Library.kt) shows how to read it). It decodes straight into the root class:
 
 ```kotlin
 val library = Json.decodeFromString<Library>(outputText)
@@ -269,7 +273,8 @@ different function names. The rules below describe the schema it returns.
 - Primary constructor parameters without a default are required, matched to properties by name in the class being
   described, so an inherited property is required when the subclass's constructor takes it without a default. See
   [Known Issues](#known-issues) for classes from compiled libraries.
-- Properties with a default or declared in the class body are optional, unless annotated with `@SchemaRequired`.
+- Properties with a default or declared in the class body are optional (they always have an initial value), unless
+  annotated with `@SchemaRequired`.
 - Nullable types allow `null` (`"type": ["string", "null"]`), which is independent of a property being required.
 - Type aliases are resolved to the type they stand for, keeping their nullability.
 
@@ -277,7 +282,8 @@ different function names. The rules below describe the schema it returns.
 - Type parameters take the type arguments of each use, so `Box<String>` and `Box<Int>` get different schemas.
   `@SchemaRoot` classes can't have type parameters.
 - A root class that contains itself is referenced with `"$ref": "#"`. A nested class that contains itself, or is
-  used in more than one place, is defined once in `$defs` and referenced with `"$ref": "#/$defs/<Name>"`. A nullable reference becomes `"anyOf": [{"$ref": ...}, {"type": "null"}]`.
+  used in more than one place, is defined once in `$defs` and referenced with `"$ref": "#/$defs/<Name>"`. A nullable
+  reference becomes `"anyOf": [{"$ref": ...}, {"type": "null"}]`.
 - Objects can nest at most 32 deep, which catches generic types that grow without repeating, e.g. a `Box<T>` holding a
   `Box<List<T>>`.
 
@@ -290,11 +296,12 @@ different function names. The rules below describe the schema it returns.
 | `@SchemaFormat`                              | `String` (not enums)          | `format`: `date-time`, `date` or `time` |
 | `@SchemaMinimum`, `@SchemaMaximum`           | Integers and numbers          | `minimum`, `maximum` (override the 0 of unsigned types) |
 | `@SchemaMinItems`, `@SchemaMaxItems`         | Collections                   | `minItems`, `maxItems`      |
-| `@SchemaPrefixItems`                         | Collections                   | `prefixItems`               |
+| `@SchemaPrefixItems` (Deprecated)            | Collections                   | `prefixItems`               |
 | `@SchemaExclude`                             | Any property                  | Excludes the property from the resulting schema |
 
-`@SchemaPrefixItems` types should fit the collection's element type, or the response can't be decoded into it: a
-`List<String>` can't hold the `Int` that `@SchemaPrefixItems(String::class, Int::class)` asks for.
+`@SchemaPrefixItems` is deprecated and will be removed before 1.0. Models follow `prefixItems` and produce arrays of
+mixed types, which a Kotlin collection can't hold, so the response fails to decode. Use a data class instead: its
+properties decode, and their names tell the model what each value means.
 
 ## Build errors
 These fail the build, pointing at the property:
@@ -321,11 +328,16 @@ Java classes aren't mapped yet, so they're described by their private fields or 
 - **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
   reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
   for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
-- **Value classes**. A `@JvmInline value class UserId(val value: String)` becomes an object with a value property,
+- **Value classes.** A `@JvmInline value class UserId(val value: String)` becomes an object with a value property,
   but kotlinx.serialization encodes it as the bare underlying value.
+- **Generated function visibility.** Currently the generated function is public, it should probably match the annotated
+  class’s visibility.
+- **Readable `$defs` names.** For generics: names like `Box_String` instead of `Box2`; making reading, understanding and
+  debugging the schema an easier task.
 
 ## Roadmap
-Planned, roughly in order:
+Planned, roughly in order. Features with design decisions to make have a proposal in
+[`docs/proposals`](docs/proposals), linked below.
 
 1. **Serialization names.** Use the names the decoder expects and leave out `@Transient` properties, starting with
    kotlinx.serialization's `@SerialName`, then Moshi's `@Json(name)`, Gson's `@SerializedName` and Jackson's
@@ -338,6 +350,13 @@ Planned, roughly in order:
    `UUID`, `BigDecimal` and `BigInteger`.
 4. **OpenAI and Anthropic schemas.** Both use JSON Schema for structured output, but each accepts a different subset
    than Gemini.
-5. **Property order**. Gemini 2.5 and later keep the schema's key order in the output, so declaration order shapes
-    generation (e.g. reasoning before answer). We need to document what's the library guarantee regarding order,
-    plan to address this.
+5. **Property order.** Gemini 2.5 and later keep the schema's key order in the output, so declaration order shapes
+   generation (e.g. reasoning before answer). The library’s ordering guarantee will be documented and tested, including
+   inherited properties.
+6. **Enums for numbers and strings.** `@SchemaEnum` restricts an `Int`, `Double` or `String` property to a set of
+   values, without declaring an enum class. See [proposal 0001](docs/proposals/0001-schema-enum.md).
+7. **Titles and descriptions on classes.** Describe a type once, on the class, instead of on every property that uses
+   it. Also describes the root schema and enum classes. See
+   [proposal 0002](docs/proposals/0002-class-descriptions.md).
+8. **Kotlin Multiplatform.** Multiplatform annotations, so schema classes can live in `commonMain`. See
+   [proposal 0003](docs/proposals/0003-kotlin-multiplatform.md).

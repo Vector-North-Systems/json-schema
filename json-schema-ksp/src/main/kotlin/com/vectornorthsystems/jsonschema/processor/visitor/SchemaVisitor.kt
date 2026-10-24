@@ -101,20 +101,6 @@ internal class SchemaVisitor(
     }
 
     /**
-     * Marks [target] as referenced, naming it in `$defs` unless it's the root (`#`), and points to it.
-     */
-    private fun referenceTo(target: ObjectNode): RefNode {
-        if (!target.referenced) {
-            target.referenced = true
-            if (!target.isRoot) {
-                target.defName = generateUniqueDefName(target.name)
-            }
-        }
-
-        return RefNode(target)
-    }
-
-    /**
      * Builds the schema [Node] of [property] as a member of [containingType].
      * Type parameters are replaced with the type arguments of the containing type.
      * @param hasNoDefault Whether the containing type's constructor takes the property without a default, so a decoder
@@ -137,54 +123,42 @@ internal class SchemaVisitor(
         )
 
         // Title and description annotations
-        propertyNode.title = property.annotation<SchemaTitle>()?.argument("text") as? String
-        propertyNode.description = property.annotation<SchemaDescription>()?.argument("text") as? String
+        processDescriptiveAnnotations(propertyNode, property)
 
         // String types and its formatting annotation.
-        handleStringAnnotations(property, propertyTypeSchema)
+        processStringAnnotations(property, propertyTypeSchema)
 
         // Integer types and its corresponding annotations.
-        handleIntegerAnnotations(property, propertyTypeSchema)
+        processIntegerAnnotations(property, propertyTypeSchema)
 
         // Array type and its corresponding annotations.
-        handleArrayAnnotations(property, propertyTypeSchema)
+        processArrayAnnotations(property, propertyTypeSchema)
 
         return propertyNode
     }
 
-    private fun handleArrayAnnotations(
+    private fun processDescriptiveAnnotations(
+        propertyNode: PropertyNode,
+        property: KSPropertyDeclaration
+    ) {
+        propertyNode.title = property.annotation<SchemaTitle>()?.argument("text") as? String
+        propertyNode.description = property.annotation<SchemaDescription>()?.argument("text") as? String
+    }
+
+    private fun processStringAnnotations(
         property: KSPropertyDeclaration,
         propertyTypeSchema: Node
     ) {
-        val minItems = property.annotation<SchemaMinItems>()?.argument("value") as? Int
-        val maxItems = property.annotation<SchemaMaxItems>()?.argument("value") as? Int
-        val prefixItems =
-            (property.annotation<SchemaPrefixItems>()?.argument("types") as? List<*>)?.filterIsInstance<KSType>()
-        if (minItems != null || maxItems != null || prefixItems != null) {
-            if (propertyTypeSchema is ArrayNode) {
-                propertyTypeSchema.minItems = minItems
-                propertyTypeSchema.maxItems = maxItems
-                propertyTypeSchema.prefixItems = prefixItems.orEmpty().map { schemaFor(property, it) }
+        property.annotation<SchemaFormat>()?.let { annotation ->
+            if (propertyTypeSchema is PrimitiveNode && propertyTypeSchema.type == PrimitiveType.STRING && propertyTypeSchema.enum == null) {
+                propertyTypeSchema.format = annotation.enumArgument<SchemaFormat.Format>(StringProperties.FORMAT)?.value
             } else {
-                logger.error(
-                    "@SchemaMinItems, @SchemaMaxItems and @SchemaPrefixItems only apply to collection properties",
-                    property
-                )
-            }
-
-            if (minItems != null && minItems < 0) {
-                logger.error("@SchemaMinItems($minItems) can't be negative", property)
-            }
-            if (maxItems != null && maxItems < 0) {
-                logger.error("@SchemaMaxItems($maxItems) can't be negative", property)
-            }
-            if (minItems != null && maxItems != null && minItems > maxItems) {
-                logger.error("@SchemaMinItems($minItems) is greater than @SchemaMaxItems($maxItems)", property)
+                logger.error("@SchemaFormat only applies to String properties", property)
             }
         }
     }
 
-    private fun handleIntegerAnnotations(
+    private fun processIntegerAnnotations(
         property: KSPropertyDeclaration,
         propertyTypeSchema: Node
     ) {
@@ -214,15 +188,34 @@ internal class SchemaVisitor(
         }
     }
 
-    private fun handleStringAnnotations(
+    private fun processArrayAnnotations(
         property: KSPropertyDeclaration,
         propertyTypeSchema: Node
     ) {
-        property.annotation<SchemaFormat>()?.let { annotation ->
-            if (propertyTypeSchema is PrimitiveNode && propertyTypeSchema.type == PrimitiveType.STRING && propertyTypeSchema.enum == null) {
-                propertyTypeSchema.format = annotation.enumArgument<SchemaFormat.Format>(StringProperties.FORMAT)?.value
+        val minItems = property.annotation<SchemaMinItems>()?.argument("value") as? Int
+        val maxItems = property.annotation<SchemaMaxItems>()?.argument("value") as? Int
+        val prefixItems =
+            (property.annotation<SchemaPrefixItems>()?.argument("types") as? List<*>)?.filterIsInstance<KSType>()
+        if (minItems != null || maxItems != null || prefixItems != null) {
+            if (propertyTypeSchema is ArrayNode) {
+                propertyTypeSchema.minItems = minItems
+                propertyTypeSchema.maxItems = maxItems
+                propertyTypeSchema.prefixItems = prefixItems.orEmpty().map { schemaFor(property, it) }
             } else {
-                logger.error("@SchemaFormat only applies to String properties", property)
+                logger.error(
+                    "@SchemaMinItems, @SchemaMaxItems and @SchemaPrefixItems only apply to collection properties",
+                    property
+                )
+            }
+
+            if (minItems != null && minItems < 0) {
+                logger.error("@SchemaMinItems($minItems) can't be negative", property)
+            }
+            if (maxItems != null && maxItems < 0) {
+                logger.error("@SchemaMaxItems($maxItems) can't be negative", property)
+            }
+            if (minItems != null && maxItems != null && minItems > maxItems) {
+                logger.error("@SchemaMinItems($minItems) is greater than @SchemaMaxItems($maxItems)", property)
             }
         }
     }
@@ -306,6 +299,20 @@ internal class SchemaVisitor(
             // Object type, continue with its properties.
             else -> objectSchemaFor(declaration, type.makeNotNullable())
         }
+    }
+
+    /**
+     * Marks [target] as referenced, naming it in `$defs` unless it's the root (`#`), and points to it.
+     */
+    private fun referenceTo(target: ObjectNode): RefNode {
+        if (!target.referenced) {
+            target.referenced = true
+            if (!target.isRoot) {
+                target.defName = generateUniqueDefName(target.name)
+            }
+        }
+
+        return RefNode(target)
     }
 
     /**
