@@ -56,10 +56,15 @@ internal class TypeClassifierImpl : TypeClassifier {
 
             declaration !is KSClassDeclaration -> TypeShape.Unsupported("$type isn't a class")
 
-            // TODO: Describe sealed classes and interfaces with anyOf.
             declaration.classKind == ClassKind.INTERFACE || Modifier.SEALED in declaration.modifiers ||
                     Modifier.ABSTRACT in declaration.modifiers ->
                 TypeShape.Unsupported("interfaces, sealed and abstract classes like $type aren't supported yet")
+
+            // Value classes are serialized as their underlying value, so they're described by its type.
+            Modifier.VALUE in declaration.modifiers || Modifier.INLINE in declaration.modifiers ->
+                declaration.getAllProperties().firstOrNull { it.hasBackingField }
+                    ?.let { TypeShape.Value(it.asMemberOf(type.makeNotNullable())) }
+                    ?: TypeShape.Unsupported("cannot find the underlying value of $type")
 
             else -> TypeShape.Object(declaration)
         }

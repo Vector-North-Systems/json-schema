@@ -58,4 +58,40 @@ class GeneratedFunctionTest {
             actual = getLoginRequestSchema()
         )
     }
+
+    @Test
+    fun `internal and private classes get an internal function`() {
+        assertSchema(
+            """
+                {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "token"
+                  ]
+                }
+            """.trimIndent(),
+            getSecretSchema()
+        )
+        assertSchema(
+            """
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+            """.trimIndent(),
+            getHiddenSchema()
+        )
+    }
 }

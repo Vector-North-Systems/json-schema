@@ -28,25 +28,39 @@ class ReadmeTest {
     fun `recipe example`() {
         assertSchema(
             """
-            {
-              "type": "object",
-              "properties": {
-                "instructions": {"type": "string"},
-                "ingredients": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "name": {"type": "string"}
+                {
+                  "type": "object",
+                  "properties": {
+                    "instructions": {
+                      "type": "string"
                     },
-                    "required": ["name"]
-                  }
-                },
-                "isColdDish": {"type": ["boolean", "null"]}
-              },
-              "required": ["instructions", "ingredients"]
-            }
-            """,
+                    "ingredients": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    },
+                    "isColdDish": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "instructions",
+                    "ingredients"
+                  ]
+                }
+            """.trimIndent(),
             getRecipeSchema()
         )
     }
@@ -55,28 +69,50 @@ class ReadmeTest {
     fun `event example`() {
         assertSchema(
             """
-            {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "title": "Name",
-                  "description": "The name of the event, as advertised",
-                  "type": "string"
-                },
-                "notes": {"type": ["string", "null"]},
-                "startsAt": {"type": "string", "format": "date-time"},
-                "rating": {"type": "number", "minimum": 1, "maximum": 4.5},
-                "attendees": {"type": "integer", "minimum": 0},
-                "speakers": {
-                  "type": "array",
-                  "items": {"type": "string"},
-                  "minItems": 1,
-                  "maxItems": 20
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "title": "Name",
+                      "description": "The name of the event, as advertised",
+                      "type": "string"
+                    },
+                    "notes": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "rating": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 4.5
+                    },
+                    "attendees": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "speakers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1,
+                      "maxItems": 20
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "startsAt",
+                    "rating",
+                    "speakers"
+                  ]
                 }
-              },
-              "required": ["name", "startsAt", "rating", "speakers"]
-            }
-            """,
+            """.trimIndent(),
             getEventSchema()
         )
     }

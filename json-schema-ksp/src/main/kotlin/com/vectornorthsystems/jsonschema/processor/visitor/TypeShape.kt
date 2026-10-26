@@ -39,6 +39,11 @@ internal sealed interface TypeShape {
     data class EnumOf(val entries: List<String>) : TypeShape
 
     /**
+     * A value class, which is serialized as the [underlying] type it wraps.
+     */
+    data class Value(val underlying: KSType) : TypeShape
+
+    /**
      * A class described by its properties.
      */
     data class Object(val declaration: KSClassDeclaration) : TypeShape

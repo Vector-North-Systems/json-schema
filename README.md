@@ -70,6 +70,7 @@ The schemas are minified. The examples below are formatted for readability, so t
 ```
 
 To choose the generated function's name, use `@SchemaRoot(functionName = "complexJsonSchema")`.
+The function is public, or `internal` when the class is internal or private.
 
 The schema follows the structure and types of the class, including nullability. Constructor parameters without a
 default are required, and properties with a default are optional.
@@ -277,6 +278,8 @@ different function names. The rules below describe the schema it returns.
   annotated with `@SchemaRequired`.
 - Nullable types allow `null` (`"type": ["string", "null"]`), which is independent of a property being required.
 - Type aliases are resolved to the type they stand for, keeping their nullability.
+- Value classes (`@JvmInline value class UserId(val value: String)`) are described by the type they wrap, as
+  kotlinx.serialization encodes them as the bare value.
 
 ### Generics and recursion
 - Type parameters take the type arguments of each use, so `Box<String>` and `Box<Int>` get different schemas.
@@ -328,10 +331,6 @@ Java classes aren't mapped yet, so they're described by their private fields or 
 - **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
   reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
   for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
-- **Value classes.** A `@JvmInline value class UserId(val value: String)` becomes an object with a value property,
-  but kotlinx.serialization encodes it as the bare underlying value.
-- **Generated function visibility.** Currently the generated function is public, it should probably match the annotated
-  class’s visibility.
 - **Readable `$defs` names.** For generics: names like `Box_String` instead of `Box2`; making reading, understanding and
   debugging the schema an easier task.
 
