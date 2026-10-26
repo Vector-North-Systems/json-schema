@@ -8,7 +8,9 @@ import com.vectornorthsystems.jsonschema.SchemaRoot
 import com.vectornorthsystems.jsonschema.processor.node.Node
 import com.vectornorthsystems.jsonschema.processor.node.ObjectNode
 import com.vectornorthsystems.jsonschema.processor.transformers.GeminiTransformer
+import com.vectornorthsystems.jsonschema.processor.visitor.AnnotationProcessorImpl
 import com.vectornorthsystems.jsonschema.processor.visitor.SchemaVisitor
+import com.vectornorthsystems.jsonschema.processor.visitor.TypeClassifierImpl
 import com.vectornorthsystems.jsonschema.processor.visitor.annotation
 import com.vectornorthsystems.jsonschema.processor.visitor.argument
 import com.vectornorthsystems.jsonschema.processor.visitor.isValidRoot
@@ -40,7 +42,7 @@ internal class SchemaProcessor(
                 if (!symbol.isValidRoot(logger)) {
                     return@forEach
                 }
-                val visitor = SchemaVisitor(logger)
+                val visitor = SchemaVisitor(AnnotationProcessorImpl(logger), TypeClassifierImpl(), logger)
                 val functionName = functionName(symbol) ?: return@forEach
                 // The root has no parent, so it's its own placeholder.
                 val parent = ObjectNode(symbol.simpleName.asString())

@@ -108,6 +108,7 @@ internal class PrimitiveNode(
 
 /**
  * A named property of an object.
+ *
  * @property name The name of the property, as declared.
  * @property declaration The schema node of the property's type.
  * @property source The source of the property, for error reporting.
