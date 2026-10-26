@@ -15,14 +15,14 @@ import com.vectornorthsystems.jsonschema.processor.writer.StringProperties
 internal class AnnotationProcessorImpl(
     val logger: KSPLogger,
 ) : AnnotationProcessor {
+
     override fun processDescriptiveAnnotations(
-        propertyNode: PropertyNode,
-        property: KSPropertyDeclaration
+        property: KSPropertyDeclaration,
+        propertyNode: PropertyNode
     ) {
         propertyNode.title = property.annotation<SchemaTitle>()?.argument("text") as? String
         propertyNode.description = property.annotation<SchemaDescription>()?.argument("text") as? String
     }
-
 
     override fun processStringAnnotations(
         property: KSPropertyDeclaration,

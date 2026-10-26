@@ -1,5 +1,7 @@
 package com.vectornorthsystems.jsonschema.processor
 
+import com.google.devtools.ksp.isInternal
+import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -17,6 +19,9 @@ import com.vectornorthsystems.jsonschema.processor.visitor.isValidRoot
 import com.vectornorthsystems.jsonschema.processor.writer.schema
 import java.io.OutputStream
 
+
+private const val INTERNAL_WITH_SPACE = "internal "
+private const val EMPTY = ""
 
 /**
  * A processor that converts Kotlin data classes annotated with [com.vectornorthsystems.jsonschema.SchemaRoot] into a schema representation.
@@ -118,6 +123,13 @@ internal class SchemaProcessor(
                 stream.write("package $packageName\n\n")
             }
 
+            // The function lives in its own file, so a private class gets an internal function: a private one
+            // couldn't be called from anywhere.
+            val visibilityModifier = when {
+                classDeclaration.isInternal() || classDeclaration.isPrivate() -> INTERNAL_WITH_SPACE
+                else -> EMPTY // Public is used by default
+            }
+
             stream.write(
                 """
                     /**
@@ -125,7 +137,7 @@ internal class SchemaProcessor(
                      *
                      * @see [$qualifiedName]
                      */
-                    fun $functionName(): String {
+                    ${visibilityModifier}fun $functionName(): String {
                            return ""${'"'}$schema""${'"'}
                     }
                 """.trimIndent()

@@ -129,6 +129,92 @@ class TypeSchemaTest {
     }
 
     @Test
+    fun `value classes are described by the value they wrap`() {
+        assertSchema(
+            """
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "previous": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+            """.trimIndent(),
+            getSubscriberSchema()
+        )
+    }
+
+    @Test
+    fun `value classes wrapping a value class or an object are unwrapped`() {
+        assertSchema(
+            $$"""
+                {
+                  "type": "object",
+                  "properties": {
+                    "handle": {
+                      "type": "string"
+                    },
+                    "home": {
+                      "$ref": "#/$defs/Residence"
+                    },
+                    "previous": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/Residence"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "handle",
+                    "home"
+                  ],
+                  "$defs": {
+                    "Residence": {
+                      "type": "object",
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        },
+                        "zip": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "city",
+                        "zip"
+                      ]
+                    }
+                  }
+                }
+            """.trimIndent(),
+            getResidentSchema()
+        )
+    }
+
+    @Test
     fun `mutable and read-only collections are arrays`() {
         assertSchema(
             """

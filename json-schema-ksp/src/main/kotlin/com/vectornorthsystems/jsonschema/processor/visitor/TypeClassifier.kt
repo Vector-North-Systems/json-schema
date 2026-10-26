@@ -7,7 +7,7 @@ import com.google.devtools.ksp.symbol.KSType
  */
 internal interface TypeClassifier {
     /**
-     * The [TypeShape] of [type].
+     * Returns the [TypeShape] of [type].
      */
     fun classify(type: KSType): TypeShape
 }

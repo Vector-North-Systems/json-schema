@@ -9,9 +9,16 @@ or the API (annotations).
 
 ### Fixed
 - The Schema Expansion issue from the known issues.
+- Value classes are described by the type they wrap, matching how kotlinx.serialization encodes them, instead of as
+  an object with a `value` property.
 
 ### Added
 - Any class used twice now moves to $defs, not only recursive ones. This yields smaller schemas that save tokens.
+
+### Changed
+- The generated function is `internal` when the `@SchemaRoot` class is internal or private, and public otherwise,
+  instead of always public. A private class gets an internal function because the function is generated in its own
+  file, where a private one could not be called.
 
 ### Deprecated
 - The `@SchemaPrefixItems` annotation is deprecated and will be removed before 1.0. Models follow `prefixItems` and

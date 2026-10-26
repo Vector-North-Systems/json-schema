@@ -134,7 +134,7 @@ internal class SchemaVisitor(
         )
 
         // Title and description annotations: apply to all properties.
-        annotationProcessor.processDescriptiveAnnotations(propertyNode, property)
+        annotationProcessor.processDescriptiveAnnotations(property, propertyNode)
 
         // Formatting annotations that apply to String properties.
         annotationProcessor.processStringAnnotations(property, propertyTypeSchema)
@@ -174,6 +174,7 @@ internal class SchemaVisitor(
             is TypeShape.EnumOf -> PrimitiveNode(PrimitiveType.STRING, shape.entries)
             is TypeShape.Collection -> ArrayNode(schemaFor(type = shape.element, symbol = symbol))
             is TypeShape.MapOf -> mapSchemaFor(shape, type, symbol)
+            is TypeShape.Value -> schemaFor(type = shape.underlying, symbol = symbol)
             is TypeShape.Object -> objectSchemaFor(shape.declaration, type.makeNotNullable())
             is TypeShape.Unsupported -> unsupported(shape.reason, symbol)
         }

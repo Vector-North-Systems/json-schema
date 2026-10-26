@@ -10,15 +10,21 @@ import com.vectornorthsystems.jsonschema.processor.node.PropertyNode
  */
 internal interface AnnotationProcessor {
     /**
-     * Processes annotations that apply to all nodes.
+     * Processes annotations that apply to all property types.
+     *
+     * @param property The annotated property.
+     * @param propertyNode The property node receiving the annotation value.
      */
     fun processDescriptiveAnnotations(
-        propertyNode: PropertyNode,
-        property: KSPropertyDeclaration
+        property: KSPropertyDeclaration,
+        propertyNode: PropertyNode
     )
 
     /**
      * Processes annotations that apply to [String] properties.
+     *
+     * @param property The annotated property.
+     * @param propertyTypeSchema The node of the type of the property receiving the annotation value.
      */
     fun processStringAnnotations(
         property: KSPropertyDeclaration,
@@ -27,6 +33,9 @@ internal interface AnnotationProcessor {
 
     /**
      * Processes annotations that apply to [Integer] properties.
+     *
+     * @param property The annotated property.
+     * @param propertyTypeSchema The node of the type of the property receiving the annotation value.
      */
     fun processIntegerAnnotations(
         property: KSPropertyDeclaration,
@@ -37,6 +46,9 @@ internal interface AnnotationProcessor {
      * Processes annotations that apply to array properties.
      * @param schemaFor Builds the schema of a type named by an annotation.
      * Should be removed when [com.vectornorthsystems.jsonschema.SchemaPrefixItems] is removed.
+     *
+     * @param property The annotated property.
+     * @param propertyTypeSchema The node of the type of the property receiving the annotation value.
      */
     fun processArrayAnnotations(
         property: KSPropertyDeclaration,
