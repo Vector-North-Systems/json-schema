@@ -140,16 +140,21 @@ class BaseTransformerImplTest {
         return root
     }
 
+    // region transform
+
     @Test
     fun transform() {
+        // Given a tree with every kind of node, and a transformer that records the nodes it visits:
         val source = tree()
         val transformer = TestTransformerImpl()
 
+        // When transforming...
         val result = transformer.transform(root = source)
 
+        // We expect a copy of the whole tree:
         assertCopy(source, result)
 
-        // Every node is visited once, through its hook.
+        // And every node to be visited once, through its hook:
         val nodes = source.allNodes()
         assertEquals(nodes.size, transformer.visited.size)
         nodes.forEach { node ->
@@ -163,18 +168,23 @@ class BaseTransformerImplTest {
 
     @Test
     fun transformLeavesSourceUnchanged() {
+        // Given a tree, and a copy of it taken before transforming:
         val source = tree()
         val snapshot = BaseTransformerImpl().transform(root = source)
 
+        // When transforming the tree...
         TestTransformerImpl().transform(root = source)
 
-        // The source still matches the copy taken before the transform.
+        // We expect the source to still match the copy taken before:
         assertCopy(source, snapshot)
     }
 
     @Test
     fun transformNode() {
+        // Given a transformer that records the nodes it visits:
         val transformer = TestTransformerImpl()
+
+        // And one node of each kind:
         val nodes = listOf(
             PrimitiveNode(PrimitiveType.BOOLEAN),
             ArrayNode(PrimitiveNode(PrimitiveType.STRING)),
@@ -185,37 +195,51 @@ class BaseTransformerImplTest {
 
         nodes.forEach { node ->
             transformer.visited.clear()
+
+            // When transforming each...
             val copy = transformer.transform(node)
 
+            // We expect a copy, and the node to be dispatched to the hook of its kind:
             assertCopy(node, copy)
             assertSame(node, transformer.visited.last(), "${node::class.simpleName} not dispatched to its hook")
         }
     }
 
+    // endregion
+
+    // region Hooks
+
     @Test
     fun transformProperty() {
+        // Given a required property with a title, a description and a nullable type:
         val source = property("name", PrimitiveNode(PrimitiveType.STRING).common(), required = true).common()
 
+        // When transforming...
         val copy = BaseTransformerImpl().transformProperty(source)
 
+        // We expect an equal copy:
         assertCopy(source, copy)
     }
 
     @Test
     fun transformPrimitiveNode() {
+        // Given a primitive with every field set:
         val source = PrimitiveNode(PrimitiveType.NUMBER, enum = listOf("1", "2")).apply {
             format = "double"
             minimum = -1.5
             maximum = 1.5
         }.common()
 
+        // When transforming...
         val copy = BaseTransformerImpl().transformPrimitiveNode(source)
 
+        // We expect an equal copy:
         assertCopy(source, copy)
     }
 
     @Test
     fun transformObjectNode() {
+        // Given a root object that is referenced, with a custom definition name and two properties:
         val source = ObjectNode(name = "Player", isRoot = true).apply {
             referenced = true
             defName = "Player2"
@@ -223,22 +247,29 @@ class BaseTransformerImplTest {
             properties += property("score", PrimitiveNode(PrimitiveType.INTEGER), required = true)
         }.common()
 
+        // When transforming...
         val copy = BaseTransformerImpl().transformObjectNode(source)
 
+        // We expect an equal copy:
         assertCopy(source, copy)
     }
 
     @Test
     fun transformRefNode() {
+        // Given an object whose property is a list of references to itself:
         val node = ObjectNode(name = "Node").apply { referenced = true }
         val ref = RefNode(node).common()
         node.properties += property("children", ArrayNode(ref))
 
+        // When transforming the object...
         val copy = BaseTransformerImpl().transformObjectNode(node)
 
+        // We expect a new reference that points to the copied object, not to the original:
         val copiedRef = assertIs<RefNode>(assertIs<ArrayNode>(copy.properties.single().declaration).declaration)
         assertNotSame(ref, copiedRef)
         assertSame(copy, copiedRef.target)
+
+        // And the same title, description and nullability:
         assertEquals(ref.title, copiedRef.title)
         assertEquals(ref.description, copiedRef.description)
         assertEquals(ref.nullable, copiedRef.nullable)
@@ -246,7 +277,9 @@ class BaseTransformerImplTest {
 
     @Test
     fun transformRefNodeOutsideItsTarget() {
-        // The target hasn't been copied, so there's nothing to point to.
+        // Given a reference to an object that hasn't been copied, so there's nothing to point to...
+        // When transforming it...
+        // We expect a failure:
         assertFailsWith<NoSuchElementException> {
             BaseTransformerImpl().transformRefNode(RefNode(ObjectNode(name = "Unseen")))
         }
@@ -254,23 +287,31 @@ class BaseTransformerImplTest {
 
     @Test
     fun transformArrayNode() {
+        // Given an array with prefix items, item limits, and a title, a description and a nullable type:
         val source = ArrayNode(PrimitiveNode(PrimitiveType.STRING).common()).apply {
             prefixItems = listOf(PrimitiveNode(PrimitiveType.INTEGER).common(), ObjectNode(name = "First"))
             minItems = 2
             maxItems = 5
         }.common()
 
+        // When transforming...
         val copy = BaseTransformerImpl().transformArrayNode(source)
 
+        // We expect an equal copy:
         assertCopy(source, copy)
     }
 
     @Test
     fun transformMapNode() {
+        // Given a map of arrays of booleans:
         val source = MapNode(ArrayNode(PrimitiveNode(PrimitiveType.BOOLEAN)).common()).common()
 
+        // When transforming...
         val copy = BaseTransformerImpl().transformMapNode(source)
 
+        // We expect an equal copy:
         assertCopy(source, copy)
     }
+
+    // endregion
 }
