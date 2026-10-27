@@ -7,6 +7,8 @@ or the API (annotations).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-27
+
 ### Fixed
 - The Schema Expansion issue from the known issues.
 - Value classes are described by the type they wrap, matching how kotlinx.serialization encodes them, instead of as
