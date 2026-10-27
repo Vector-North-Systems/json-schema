@@ -18,11 +18,12 @@ internal class TypeClassifierImpl : TypeClassifier {
             // Resolve type aliases
             declaration is KSTypeAlias -> TypeShape.Alias(declaration.type.resolve())
 
+            // Type parameters ar not supported.
             declaration is KSTypeParameter -> TypeShape.Unsupported(
                 "The type parameter ${declaration.name.asString()} has no type argument to describe; use a concrete type."
             )
 
-            // Primitive types including arrays
+            // Primitive types including (primitive type) arrays
             qualifiedName in knownIntegerTypes -> TypeShape.Primitive(PrimitiveType.INTEGER)
             qualifiedName in knownUnsignedTypes -> TypeShape.Primitive(PrimitiveType.INTEGER, minimum = 0.0)
             qualifiedName in knownNumberTypes -> TypeShape.Primitive(PrimitiveType.NUMBER)

@@ -11,7 +11,6 @@ import com.vectornorthsystems.jsonschema.processor.node.PrimitiveNode
 import com.vectornorthsystems.jsonschema.processor.node.PropertyNode
 import com.vectornorthsystems.jsonschema.processor.writer.StringProperties
 
-
 internal class AnnotationProcessorImpl(
     val logger: KSPLogger,
 ) : AnnotationProcessor {
