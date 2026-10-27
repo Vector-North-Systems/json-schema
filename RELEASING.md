@@ -12,28 +12,35 @@ Snapshots are only published to the local Maven repository.
 ## Branches and tags
 - `main` is always releasable. Changes land through short-lived branches and pull requests.
 - Each release is an annotated tag on `main`, named `v<version>`, for example `v0.1.0`. The tag points at exactly
-  what was published.
+  what was published, and pushing it is what publishes.
 - Release branches are created only when needed: to fix a released version after `main` has moved on, branch
   `release/<major>.<minor>.x` (for example `release/0.1.x`) from the release tag, fix it there, and tag the patch
   release (`v0.1.1`) on that branch. Port the fix to `main` too.
 
 ## Release steps
-1. Make sure `main` builds: `./gradlew clean build`.
+1. Branch `release/<version>` from `main` and make sure it builds: `./gradlew clean build`.
 2. Commit the release:
    - Set `version=<version>` in `gradle.properties`.
    - In `CHANGELOG.md`, rename `[Unreleased]` to `[<version>] - <YYYY-MM-DD>` and add a new empty `[Unreleased]`
      section above it.
    - Update the version in the README's Installation section.
-   - Commit as `Release <version>`.
-3. Tag and push:
+   - Commit as `Release <version>`, and merge it into `main` through a pull request.
+3. Tag the merged commit and push only the tag. A squash or rebase merge changes the commit's SHA, so tag
+   `origin/main`, not the branch:
    ```shell
-   git tag -a v<version> -m "<version>"
-   git push origin main v<version>
+   git fetch origin
+   git show origin/main:gradle.properties | grep version   # must be version=<version>
+   git tag -a v<version> -m "<version>" origin/main
+   git push origin v<version>
    ```
-4. Publish the artifacts from the tagged commit.
+   Creating `v*` tags is restricted by a repository rule, so it needs an account allowed to bypass it.
+4. Pushing the tag starts the `Release` workflow, which checks that the tag matches `gradle.properties` and publishes
+   the artifacts to the Central Portal staging area. Nothing is public yet. When the run succeeds, review the
+   deployment at [central.sonatype.com](https://central.sonatype.com) and release it, or drop it if something is wrong.
+   If the run fails, fix the cause and re-run it with the workflow's manual trigger, giving the tag as the ref.
 5. Create a GitHub release from the tag, with the version's changelog section as notes.
-6. Start the next version: set `version=<next>-SNAPSHOT` in `gradle.properties` and commit as
-   `Prepare <next>-SNAPSHOT`.
+6. Start the next version: set `version=<next>-SNAPSHOT` in `gradle.properties` and land it through a pull request
+   as `Prepare <next>-SNAPSHOT`.
 
 ## History
 Amend or squash commits freely before pushing. Never rewrite history that's been pushed to `main` or included in a

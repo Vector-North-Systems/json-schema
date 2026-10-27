@@ -324,15 +324,17 @@ Java classes aren't mapped yet, so they're described by their private fields or 
 ## Known Issues
 - **Generated filename collisions.** Custom function names such as `foo` and `Foo` both produce `Foo.kt`, causing
   a build failure. Choose names that differ beyond capitalization of the first character.
+  See [#8](https://github.com/Vector-North-Systems/json-schema/issues/8).
 - **Classes from compiled libraries.** Required properties come from constructor defaults, which haven't been tested
   for classes from another module or a library jar. If KSP can't read their defaults, every constructor parameter is
   required. Decoding still works, but the AI model can't leave out fields that have a default. Until this is
   verified, check the generated schema, or describe these classes with your own types.
+  See [#9](https://github.com/Vector-North-Systems/json-schema/issues/9).
 - **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
   reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
   for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
-- **Readable `$defs` names.** For generics: names like `Box_String` instead of `Box2`; making reading, understanding and
-  debugging the schema an easier task.
+  See [#10](https://github.com/Vector-North-Systems/json-schema/issues/10).
+- **See [all open bugs](https://github.com/Vector-North-Systems/json-schema/issues?q=is%3Aissue+state%3Aopen+type%3ABug)**.
 
 ## Roadmap
 Planned, roughly in order. Features with design decisions to make have a proposal in
@@ -359,3 +361,5 @@ Planned, roughly in order. Features with design decisions to make have a proposa
    [proposal 0002](docs/proposals/0002-class-descriptions.md).
 8. **Kotlin Multiplatform.** Multiplatform annotations, so schema classes can live in `commonMain`. See
    [proposal 0003](docs/proposals/0003-kotlin-multiplatform.md).
+9. **Readable `$defs` names.** For generics: names like `Box_String` instead of `Box2`; making reading, understanding and
+   debugging the schema an easier task. See [#11](https://github.com/Vector-North-Systems/json-schema/issues/11)
