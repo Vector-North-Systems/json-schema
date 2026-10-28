@@ -7,6 +7,10 @@ or the API (annotations).
 
 ## [Unreleased]
 
+### Removed
+- The `@SchemaPrefixItems` annotation, deprecated in 0.2.0. This breaks the build of code that still uses it: remove
+  the annotation, or replace the array with a data class whose properties have the types you need.
+
 ## [0.2.0] - 2026-10-27
 
 ### Fixed

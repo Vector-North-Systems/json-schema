@@ -37,7 +37,7 @@ private fun <T : Node> T.common(): T = apply {
 private fun Node.allNodes(): List<Node> = listOf(this) + when (this) {
     is ObjectNode -> properties.flatMap { it.allNodes() }
     is PropertyNode -> declaration.allNodes()
-    is ArrayNode -> declaration.allNodes() + prefixItems.flatMap { it.allNodes() }
+    is ArrayNode -> declaration.allNodes()
     is MapNode -> declaration.allNodes()
     is PrimitiveNode, is RefNode -> emptyList()
 }
@@ -87,8 +87,6 @@ private fun assertCopy(original: Node, copy: Node, copies: MutableMap<ObjectNode
             assertEquals(original.minItems, copy.minItems)
             assertEquals(original.maxItems, copy.maxItems)
             assertCopy(original.declaration, copy.declaration, copies)
-            assertEquals(original.prefixItems.size, copy.prefixItems.size)
-            original.prefixItems.zip(copy.prefixItems).forEach { (o, c) -> assertCopy(o, c, copies) }
         }
 
         is MapNode -> {
@@ -128,7 +126,6 @@ class BaseTransformerImplTest {
             }.common()),
             property("level", PrimitiveNode(PrimitiveType.STRING, enum = listOf("EASY", "HARD")).common()),
             property("rules", ArrayNode(PrimitiveNode(PrimitiveType.STRING)).apply {
-                prefixItems = listOf(PrimitiveNode(PrimitiveType.INTEGER), PrimitiveNode(PrimitiveType.BOOLEAN))
                 minItems = 1
                 maxItems = 3
             }.common()),
@@ -287,9 +284,8 @@ class BaseTransformerImplTest {
 
     @Test
     fun transformArrayNode() {
-        // Given an array with prefix items, item limits, and a title, a description and a nullable type:
+        // Given an array with item limits, and a title, a description and a nullable type:
         val source = ArrayNode(PrimitiveNode(PrimitiveType.STRING).common()).apply {
-            prefixItems = listOf(PrimitiveNode(PrimitiveType.INTEGER).common(), ObjectNode(name = "First"))
             minItems = 2
             maxItems = 5
         }.common()

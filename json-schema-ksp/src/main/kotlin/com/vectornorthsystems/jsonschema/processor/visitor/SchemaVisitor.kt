@@ -143,9 +143,7 @@ internal class SchemaVisitor(
         annotationProcessor.processIntegerAnnotations(property, propertyTypeSchema)
 
         // Annotations that apply to array types.
-        annotationProcessor.processArrayAnnotations(property, propertyTypeSchema) {
-            schemaFor(type = it, symbol = property)
-        }
+        annotationProcessor.processArrayAnnotations(property, propertyTypeSchema)
 
         return propertyNode
     }

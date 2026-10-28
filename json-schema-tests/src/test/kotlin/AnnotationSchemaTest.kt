@@ -44,20 +44,6 @@ class AnnotationSchemaTest {
                   },
                   "minItems": 1,
                   "maxItems": 20
-                },
-                "location": {
-                  "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "integer"
-                    }
-                  ],
-                  "items": {
-                    "type": "string"
-                  }
                 }
               },
               "required": [

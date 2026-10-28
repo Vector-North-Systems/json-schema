@@ -60,11 +60,6 @@ internal class RefNode(val target: ObjectNode) : Node()
  */
 internal class ArrayNode(val declaration: Node) : Node() {
     /**
-     * The schemas of the first items, see [com.vectornorthsystems.jsonschema.SchemaPrefixItems].
-     */
-    var prefixItems: List<Node> = emptyList()
-
-    /**
      * The minimum number of items, if specified. See [com.vectornorthsystems.jsonschema.SchemaMinItems]
      */
     var minItems: Int? = null

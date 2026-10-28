@@ -157,11 +157,6 @@ internal object ArrayProperties {
     const val ITEMS = "items"
 
     /**
-     * Defines a list of schemas for the first N items, allowing for tuple-like structures.
-     */
-    const val PREFIX_ITEMS = "prefixItems"
-
-    /**
      * The minimum number of items in the array.
      */
     const val MIN_ITEMS = "minItems"
