@@ -24,9 +24,6 @@ data class Event(
     @SchemaMaxItems(20)
     val speakers: List<String> = emptyList(),
 
-    @SchemaPrefixItems(String::class, Int::class)
-    val location: List<String> = emptyList(),
-
     @SchemaExclude
     val startTime: String = "",
 

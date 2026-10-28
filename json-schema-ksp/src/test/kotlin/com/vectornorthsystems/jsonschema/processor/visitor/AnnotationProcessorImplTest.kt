@@ -8,7 +8,6 @@ import com.vectornorthsystems.jsonschema.processor.PrimitiveType
 import com.vectornorthsystems.jsonschema.processor.doubles.ksAnnotation
 import com.vectornorthsystems.jsonschema.processor.doubles.ksProperty
 import com.vectornorthsystems.jsonschema.processor.node.ArrayNode
-import com.vectornorthsystems.jsonschema.processor.node.Node
 import com.vectornorthsystems.jsonschema.processor.node.ObjectNode
 import com.vectornorthsystems.jsonschema.processor.node.PrimitiveNode
 import com.vectornorthsystems.jsonschema.processor.node.PropertyNode
@@ -400,12 +399,12 @@ class AnnotationProcessorImplTest {
         )
 
         // When processing it against a string node...
-        processor.processArrayAnnotations(property, PrimitiveNode(PrimitiveType.STRING)) { error("not expected") }
+        processor.processArrayAnnotations(property, PrimitiveNode(PrimitiveType.STRING))
 
         // We expect the error to be logged:
         verify {
             logger.error(
-                "@SchemaMinItems, @SchemaMaxItems and @SchemaPrefixItems only apply to collection properties",
+                "@SchemaMinItems and @SchemaMaxItems only apply to collection properties",
                 property
             )
         }
@@ -417,7 +416,7 @@ class AnnotationProcessorImplTest {
         val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinItems", "value" to -1)))
 
         // When processing it against an array node...
-        processor.processArrayAnnotations(property, arrayNode()) { error("not expected") }
+        processor.processArrayAnnotations(property, arrayNode())
 
         // We expect the error to be logged:
         verify { logger.error("@SchemaMinItems(-1) can't be negative", property) }
@@ -429,7 +428,7 @@ class AnnotationProcessorImplTest {
         val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMaxItems", "value" to -1)))
 
         // When processing it against an array node...
-        processor.processArrayAnnotations(property, arrayNode()) { error("not expected") }
+        processor.processArrayAnnotations(property, arrayNode())
 
         // We expect the error to be logged:
         verify { logger.error("@SchemaMaxItems(-1) can't be negative", property) }
@@ -446,7 +445,7 @@ class AnnotationProcessorImplTest {
         )
 
         // When processing it against an array node...
-        processor.processArrayAnnotations(property, arrayNode()) { error("not expected") }
+        processor.processArrayAnnotations(property, arrayNode())
 
         // We expect the error to be logged:
         verify { logger.error("@SchemaMinItems(5) is greater than @SchemaMaxItems(2)", property) }
@@ -461,12 +460,11 @@ class AnnotationProcessorImplTest {
         val node = arrayNode()
 
         // When processing, with a schema resolver that fails if used...
-        processor.processArrayAnnotations(property, node) { error("not expected") }
+        processor.processArrayAnnotations(property, node)
 
         // We expect nothing to be written to the node, and no errors:
         assertNull(node.minItems)
         assertNull(node.maxItems)
-        assertEquals(emptyList(), node.prefixItems)
         verifyNoErrors()
     }
 
@@ -484,12 +482,11 @@ class AnnotationProcessorImplTest {
         val node = arrayNode()
 
         // When processing...
-        processor.processArrayAnnotations(property, node) { error("not expected") }
+        processor.processArrayAnnotations(property, node)
 
-        // We expect both limits to be written, with no prefix items and no errors:
+        // We expect both limits to be written, with no errors:
         assertEquals(1, node.minItems)
         assertEquals(5, node.maxItems)
-        assertEquals(emptyList(), node.prefixItems)
         verifyNoErrors()
     }
 
@@ -504,35 +501,9 @@ class AnnotationProcessorImplTest {
         )
 
         // When processing it against an array node...
-        processor.processArrayAnnotations(property, arrayNode()) { error("not expected") }
+        processor.processArrayAnnotations(property, arrayNode())
 
         // We expect no errors:
-        verifyNoErrors()
-    }
-
-    @Test
-    fun `prefix items are resolved into schemas on the array node`() {
-        // Given two types, and the schemas they resolve to:
-        val first: KSType = mockk()
-        val second: KSType = mockk()
-        val firstSchema = PrimitiveNode(PrimitiveType.STRING)
-        val secondSchema = PrimitiveNode(PrimitiveType.INTEGER)
-        val schemas = mapOf<KSType, Node>(first to firstSchema, second to secondSchema)
-
-        // And a property declaration with those types as prefix items:
-        val property =
-            ksProperty(seed = listOf(schemaAnnotation("SchemaPrefixItems", "types" to listOf(first, second))))
-
-        // And an array node:
-        val node = arrayNode()
-
-        // When processing...
-        processor.processArrayAnnotations(property, node) { schemas.getValue(it) }
-
-        // We expect the resolved schemas on the node, in order, with no limits and no errors:
-        assertEquals(listOf<Node>(firstSchema, secondSchema), node.prefixItems)
-        assertNull(node.minItems)
-        assertNull(node.maxItems)
         verifyNoErrors()
     }
 

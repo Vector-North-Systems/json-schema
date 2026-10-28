@@ -2,7 +2,6 @@ package com.vectornorthsystems.jsonschema.processor.visitor
 
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.KSType
 import com.vectornorthsystems.jsonschema.*
 import com.vectornorthsystems.jsonschema.processor.PrimitiveType
 import com.vectornorthsystems.jsonschema.processor.node.ArrayNode
@@ -69,20 +68,17 @@ internal class AnnotationProcessorImpl(
     override fun processArrayAnnotations(
         property: KSPropertyDeclaration,
         propertyTypeSchema: Node,
-        schemaFor: (KSType) -> Node
     ) {
         val minItems = property.annotation<SchemaMinItems>()?.argument("value") as? Int
         val maxItems = property.annotation<SchemaMaxItems>()?.argument("value") as? Int
-        val prefixItems =
-            (property.annotation<SchemaPrefixItems>()?.argument("types") as? List<*>)?.filterIsInstance<KSType>()
-        if (minItems != null || maxItems != null || prefixItems != null) {
+
+        if (minItems != null || maxItems != null) {
             if (propertyTypeSchema is ArrayNode) {
                 propertyTypeSchema.minItems = minItems
                 propertyTypeSchema.maxItems = maxItems
-                propertyTypeSchema.prefixItems = prefixItems.orEmpty().map(schemaFor)
             } else {
                 logger.error(
-                    "@SchemaMinItems, @SchemaMaxItems and @SchemaPrefixItems only apply to collection properties",
+                    "@SchemaMinItems and @SchemaMaxItems only apply to collection properties",
                     property
                 )
             }

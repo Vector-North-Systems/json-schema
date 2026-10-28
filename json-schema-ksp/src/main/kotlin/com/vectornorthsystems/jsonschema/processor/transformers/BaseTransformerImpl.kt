@@ -93,7 +93,6 @@ internal open class BaseTransformerImpl : Transformer {
      */
     override fun transformArrayNode(node: ArrayNode): ArrayNode {
         return ArrayNode(transformNode(node.declaration)).apply {
-            prefixItems = node.prefixItems.map { transformNode(it) }
             minItems = node.minItems
             maxItems = node.maxItems
         }.copyCommon(node)

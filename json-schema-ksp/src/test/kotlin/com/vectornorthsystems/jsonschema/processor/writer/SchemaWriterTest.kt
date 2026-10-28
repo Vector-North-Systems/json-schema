@@ -349,24 +349,6 @@ class SchemaWriterTest {
     }
 
     @Test
-    fun `prefix items come before the items`() {
-        // Given an array with a string and an integer as its first items:
-        val root = root(property("tuple", ArrayNode(string()).apply {
-            prefixItems = listOf(string(), integer())
-        }))
-
-        // When writing...
-        val schema = root.schema
-
-        // We expect the prefix items before the items:
-        assertEquals(
-            """{"type":"object","properties":{"tuple":{"type":"array","prefixItems":""" +
-                    """[{"type":"string"},{"type":"integer"}],"items":{"type":"string"}}},"required":["tuple"]}""",
-            schema
-        )
-    }
-
-    @Test
     fun `an array of arrays nests the items`() {
         // Given an array of arrays of integers:
         val root = root(property("grid", ArrayNode(ArrayNode(integer()))))

@@ -299,10 +299,11 @@ different function names. The rules below describe the schema it returns.
 | `@SchemaFormat`                              | `String` (not enums)          | `format`: `date-time`, `date` or `time` |
 | `@SchemaMinimum`, `@SchemaMaximum`           | Integers and numbers          | `minimum`, `maximum` (override the 0 of unsigned types) |
 | `@SchemaMinItems`, `@SchemaMaxItems`         | Collections                   | `minItems`, `maxItems`      |
-| `@SchemaPrefixItems` (Deprecated)            | Collections                   | `prefixItems`               |
 | `@SchemaExclude`                             | Any property                  | Excludes the property from the resulting schema |
 
-`@SchemaPrefixItems` is deprecated and will be removed before 1.0. Models follow `prefixItems` and produce arrays of
+
+## Not supported
+Gemini's `prefixItems` support was deprecated, and it is now removed. AI models follow `prefixItems` and produce arrays of
 mixed types, which a Kotlin collection can't hold, so the response fails to decode. Use a data class instead: its
 properties decode, and their names tell the model what each value means.
 

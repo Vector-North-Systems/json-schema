@@ -59,18 +59,6 @@ private class SchemaWriter {
         when (node) {
             is ArrayNode -> {
                 writeType(Types.ARRAY, node.nullable)
-                if (node.prefixItems.isNotEmpty()) {
-                    builder.append(",\"${ArrayProperties.PREFIX_ITEMS}\":[")
-                    node.prefixItems.forEachIndexed { index, item ->
-                        if (index > 0) {
-                            builder.append(",")
-                        }
-                        builder.append("{")
-                        writeSchema(item)
-                        builder.append("}")
-                    }
-                    builder.append("]")
-                }
                 builder.append(",\"${ArrayProperties.ITEMS}\":{")
                 writeSchema(node.declaration)
                 builder.append("}")
