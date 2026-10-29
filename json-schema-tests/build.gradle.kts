@@ -24,6 +24,12 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+// Sets the module's dialects, as a user would, so the option is read by a real build and not only by unit tests.
+// An unknown or empty list here fails the build.
+ksp {
+    arg("jsonSchema.targets", "gemini")
+}
+
 kotlin {
     jvmToolchain(17)
 }

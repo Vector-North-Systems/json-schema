@@ -52,7 +52,7 @@ class AnnotationSchemaTest {
               ]
             }
             """,
-            getEventSchema()
+            EventSchema.GEMINI
         )
     }
 }

@@ -3,6 +3,8 @@ package com.vectornorthsystems.jsonschema.processor.visitor
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.vectornorthsystems.jsonschema.SchemaExclude
+import com.vectornorthsystems.jsonschema.SchemaRoot
+import com.vectornorthsystems.jsonschema.SchemaTarget
 
 /**
  * For details of the KSP symbol API, see https://kotlinlang.org/docs/ksp-kotlin-model.html
@@ -82,13 +84,51 @@ internal fun KSAnnotation.argument(name: String): Any? =
  * An enum argument, which KSP gives as the entry's [KSType] or [KSClassDeclaration] depending on the version.
  */
 internal inline fun <reified E : Enum<E>> KSAnnotation.enumArgument(name: String): E? {
-    val entry = when (val value = argument(name)) {
-        is KSType -> value.declaration
-        is KSDeclaration -> value
-        else -> return null
+    val entryName = enumEntryName(argument(name)) ?: return null
+
+    return enumValues<E>().firstOrNull { it.name == entryName }
+}
+
+/**
+ * The name of an enum entry given as an argument value, which KSP gives as the entry's [KSType] or
+ * [KSClassDeclaration] depending on the version. Null if the value isn't an enum entry.
+ */
+internal fun enumEntryName(value: Any?): String? = when (value) {
+    is KSType -> value.declaration.simpleName.asString()
+    is KSDeclaration -> value.simpleName.asString()
+    else -> null
+}
+
+/**
+ * Obtains the targets set in [SchemaRoot.targets], or empty if none are set.
+ * Logs an error, pointing at the class, for a target this processor doesn't know, since the class wouldn't get the
+ * schemas it asked for.
+ */
+internal fun KSClassDeclaration.dialects(logger: KSPLogger): Set<SchemaTarget> {
+    // KSP documents array arguments as an Array, but KSP 2.3.10 gives a List (of KSClassDeclaration enum entries), as
+    // the Targets fixture showed. Both are accepted, in case it differs between versions. Something else can't be read,
+    // which would silently drop the class's dialects, so it's an error.
+    val entries = when (val value = annotation<SchemaRoot>()?.argument("targets")) {
+        is List<*> -> value
+        is Array<*> -> value.toList()
+        null -> return emptySet()
+        else -> {
+            logger.error("@SchemaRoot(targets) can't be read from a ${value::class.simpleName}", this)
+            return emptySet()
+        }
     }
 
-    return enumValues<E>().firstOrNull { it.name == entry.simpleName.asString() }
+    return entries.mapNotNull { entry ->
+        val entryName = enumEntryName(entry)
+        val target = SchemaTarget.entries.firstOrNull { it.name == entryName }
+        if (target == null) {
+            logger.error(
+                "@SchemaRoot(targets) has an unknown target '$entryName'. Valid targets are: ${SchemaTarget.entries}",
+                this
+            )
+        }
+        target
+    }.toSet()
 }
 
 /**

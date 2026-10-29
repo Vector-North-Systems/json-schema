@@ -3,6 +3,8 @@ package com.vectornorthsystems.jsonschema.processor.visitor
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.vectornorthsystems.jsonschema.SchemaExclude
+import com.vectornorthsystems.jsonschema.SchemaRoot
+import com.vectornorthsystems.jsonschema.SchemaTarget
 import com.vectornorthsystems.jsonschema.processor.doubles.ksAnnotation
 import com.vectornorthsystems.jsonschema.processor.doubles.ksClassDeclaration
 import com.vectornorthsystems.jsonschema.processor.doubles.ksDeclaration
@@ -225,6 +227,91 @@ class KsExtensionsTest {
         assertEquals("email", annotation.argument("format"))
         assertNull(annotation.argument("empty"))
         assertNull(annotation.argument("missing"))
+    }
+
+    // endregion
+
+    // region dialects
+
+    /**
+     * A root class whose @SchemaRoot has the given targets argument, or none at all if [targets] is null.
+     */
+    private fun rootWithTargets(targets: Any?): KSClassDeclaration = ksClassDeclaration(
+        annotations = listOf(
+            ksAnnotation(
+                SchemaRoot::class.qualifiedName!!,
+                if (targets == null) emptyMap() else mapOf("targets" to targets)
+            )
+        )
+    )
+
+    /**
+     * An enum entry argument, named [entryName].
+     */
+    private fun entry(entryName: String): KSClassDeclaration =
+        ksClassDeclaration(kind = ClassKind.ENUM_ENTRY, simpleName = entryName)
+
+    @Test
+    fun `an unknown target is an error pointing at the class`() {
+        // Given a root asking for a target this processor doesn't know, next to a known one:
+        val logger = mockk<KSPLogger>(relaxed = true)
+        val root = rootWithTargets(arrayOf(entry("GEMINI"), entry("OPENAI")))
+
+        // When reading its targets...
+        val targets = root.dialects(logger)
+
+        // We expect an error at the class naming the unknown target:
+        verify {
+            logger.error("@SchemaRoot(targets) has an unknown target 'OPENAI'. Valid targets are: [GEMINI]", root)
+        }
+        assertEquals(setOf(SchemaTarget.GEMINI), targets)
+    }
+
+    @Test
+    fun `a targets argument that can't be read is an error pointing at the class`() {
+        // Given a root whose targets argument is neither a List nor an Array:
+        val logger = mockk<KSPLogger>(relaxed = true)
+        val root = rootWithTargets("GEMINI")
+
+        // When reading its targets...
+        val targets = root.dialects(logger)
+
+        // We expect an error at the class, instead of silently dropping its dialects:
+        verify { logger.error("@SchemaRoot(targets) can't be read from a String", root) }
+        assertEquals(emptySet(), targets)
+    }
+
+    @Test
+    fun `no targets argument means no override`() {
+        // Given roots without a targets argument, with an empty one, and without @SchemaRoot at all:
+        val logger = mockk<KSPLogger>(relaxed = true)
+        val roots = listOf(rootWithTargets(null), rootWithTargets(emptyArray<Any>()), ksClassDeclaration())
+
+        roots.forEach { root ->
+            // When reading their targets...
+            // We expect none, so the module defaults apply, and no errors:
+            assertEquals(emptySet(), root.dialects(logger))
+        }
+        verify(exactly = 0) { logger.error(any(), any()) }
+    }
+
+    @Test
+    fun `targets are read from enum entries given as declarations or types`() {
+        // Given targets as an array of declarations, as a list, and as a type (older KSP versions):
+        val logger = mockk<KSPLogger>(relaxed = true)
+        val asType = ksType(entry("GEMINI"))
+        val roots = listOf(
+            rootWithTargets(arrayOf(entry("GEMINI"))),
+            rootWithTargets(listOf(entry("GEMINI"))),
+            rootWithTargets(arrayOf(asType)),
+        )
+
+        roots.forEach { root ->
+            // When reading their targets...
+            // We expect the target, and no errors:
+            assertEquals(setOf(SchemaTarget.GEMINI), root.dialects(logger))
+        }
+        verify(exactly = 0) { logger.error(any(), any()) }
     }
 
     // endregion

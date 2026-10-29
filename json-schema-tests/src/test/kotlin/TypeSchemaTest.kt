@@ -54,7 +54,7 @@ class TypeSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getUnitPreferencesSchema()
+            UnitPreferencesSchema.GEMINI
         )
     }
 
@@ -140,7 +140,7 @@ class TypeSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getProfileSchema()
+            ProfileSchema.GEMINI
         )
     }
 
@@ -174,7 +174,7 @@ class TypeSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getMeasurementsSchema()
+            MeasurementsSchema.GEMINI
         )
     }
 
@@ -209,7 +209,7 @@ class TypeSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getSubscriberSchema()
+            SubscriberSchema.GEMINI
         )
     }
 
@@ -260,7 +260,7 @@ class TypeSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getResidentSchema()
+            ResidentSchema.GEMINI
         )
     }
 
@@ -328,7 +328,7 @@ class TypeSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getContainersSchema()
+            ContainersSchema.GEMINI
         )
     }
 
@@ -372,7 +372,7 @@ class TypeSchemaTest {
                   }
                 }
                 """,
-            actual = getAdditionalSchema()
+            actual = AdditionalSchema.GEMINI
         )
     }
 }

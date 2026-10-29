@@ -1,5 +1,6 @@
 package com.vectornorthsystems.jsonschema.processor.transformers
 
+import com.vectornorthsystems.jsonschema.SchemaTarget
 import com.vectornorthsystems.jsonschema.processor.node.*
 
 /**
@@ -7,6 +8,11 @@ import com.vectornorthsystems.jsonschema.processor.node.*
  * Produces a copy of the input tree.
  */
 internal interface Transformer {
+
+    /**
+     * The dialect this transformer lowers the tree for.
+     */
+    val target: SchemaTarget
 
     /**
      * Transforms the tree starting at [root], returning the transformed copy.
