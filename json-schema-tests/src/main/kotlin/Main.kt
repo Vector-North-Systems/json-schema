@@ -20,7 +20,7 @@ val samples: Map<String, suspend (Model) -> Unit> = mapOf(
  *   GEMINI_API_KEY=... ./gradlew :json-schema-tests:run
  *
  * Or only some of them:
- *   GEMINI_API_KEY=... ./gradlew :json-schema-tests:run --args="recipe publication"
+ *   GEMINI_API_KEY=... ./gradlew :json-schema-tests:run --args="recipe publication library"
  */
 suspend fun main(args: Array<String>) {
     val unknown = args.filterNot { it in samples }
