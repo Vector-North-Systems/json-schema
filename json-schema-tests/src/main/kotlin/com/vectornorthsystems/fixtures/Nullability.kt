@@ -24,3 +24,16 @@ data class Profile(
     @SchemaRequired
     val website: String? = null,
 )
+
+/**
+ * Nullable enums list `null` among their values, whether they're required, list items or map values. The same enum
+ * used without `?`, even inside a nullable collection, doesn't.
+ */
+@SchemaRoot
+data class UnitPreferences(
+    val system: UnitSystem?,
+    val fallback: UnitSystem,
+    val history: List<UnitSystem?>,
+    val bySite: Map<String, UnitSystem?>,
+    val preferred: List<UnitSystem>? = null,
+)

@@ -277,6 +277,8 @@ different function names. The rules below describe the schema it returns.
 - Properties with a default or declared in the class body are optional (they always have an initial value), unless
   annotated with `@SchemaRequired`.
 - Nullable types allow `null` (`"type": ["string", "null"]`), which is independent of a property being required.
+  A nullable enum also lists `null` among its values (`"enum": ["METRIC", "IMPERIAL", null]`), since `enum` restricts
+  the value on top of `type`.
 - Type aliases are resolved to the type they stand for, keeping their nullability.
 - Value classes (`@JvmInline value class UserId(val value: String)`) are described by the type they wrap, as
   kotlinx.serialization encodes them as the bare value.
@@ -331,10 +333,6 @@ Java classes aren't mapped yet, so they're described by their private fields or 
   required. Decoding still works, but the AI model can't leave out fields that have a default. Until this is
   verified, check the generated schema, or describe these classes with your own types.
   See [#9](https://github.com/Vector-North-Systems/json-schema/issues/9).
-- **Nullable enums.** Their `type` includes `null`, but their `enum` values do not, so JSON Schema validators still
-  reject null. This needs a correction and a Gemini compatibility check. Until then, avoid relying on explicit null
-  for enum fields; where omission is acceptable, an optional field with a default may be a suitable alternative.
-  See [#10](https://github.com/Vector-North-Systems/json-schema/issues/10).
 - **See [all open bugs](https://github.com/Vector-North-Systems/json-schema/issues?q=is%3Aissue+state%3Aopen+type%3ABug)**.
 
 ## Roadmap

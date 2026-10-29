@@ -88,7 +88,9 @@ private class SchemaWriter {
                 writeType(node.type.keyword, node.nullable)
                 node.enum?.let { values ->
                     builder.append(",\"${StringProperties.ENUM}\":")
-                    builder.append(values.joinToString(",", "[", "]") { it.toJsonString() })
+                    // Nullable enum fields get the null option to comply with JSON schema.
+                    val enumOptions: List<String?> = if (node.nullable) values.plus(null) else values
+                    builder.append(enumOptions.joinToString(",", "[", "]") { it?.toJsonString() ?: "null" })
                 }
                 node.format?.let { builder.append(",\"${StringProperties.FORMAT}\":${it.toJsonString()}") }
                 node.minimum?.let { builder.append(",\"${NumberProperties.MINIMUM}\":${it.toJsonNumber()}") }
