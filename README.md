@@ -18,7 +18,7 @@ class, make a field optional) and the next build regenerates a matching schema. 
 back into the same classes, so there's no hand-written schema to keep in sync with your code.
 
 Because the schemas are generated at compile time, there's no reflection and no runtime dependency: each schema is a
-string literal returned by a generated function. Mistakes, like a constraint on the wrong type or a type that can't be
+string constant in a generated object. Mistakes, like a constraint on the wrong type or a type that can't be
 described, fail the build and point at the property.
 
 ## Installation
@@ -48,13 +48,20 @@ data class Complex(
 )
 ```
 
-`@SchemaRoot` marks the class for processing, which generates the following function in the same package:
+`@SchemaRoot` marks the class for processing, which generates the following object in the same package:
 
 ```kotlin
-fun getComplexSchema(): String {
-    return """{"type":"object","properties":{"real":{"type":"number"},"imaginary":{"type":"number"}},"required":["real","imaginary"]}"""
+object ComplexSchema {
+    const val GEMINI: String = """{"type":"object","properties":{"real":{"type":"number"},"imaginary":{"type":"number"}},"required":["real","imaginary"]}"""
+
+    operator fun get(target: SchemaTarget): String = when (target) {
+        SchemaTarget.GEMINI -> GEMINI
+    }
 }
 ```
+
+Use the constant of the dialect you need, `ComplexSchema.GEMINI`, or pick one at runtime with
+`ComplexSchema[SchemaTarget.GEMINI]`. See [Dialects](#dialects).
 
 The schemas are minified. The examples below are formatted for readability, so the one above reads:
 
@@ -69,8 +76,8 @@ The schemas are minified. The examples below are formatted for readability, so t
 }
 ```
 
-To choose the generated function's name, use `@SchemaRoot(functionName = "complexJsonSchema")`.
-The function is public, or `internal` when the class is internal or private.
+To choose the generated object's name, use `@SchemaRoot(name = "ComplexJsonSchema")`.
+The object is public, or `internal` when the class is internal or private.
 
 The schema follows the structure and types of the class, including nullability. Constructor parameters without a
 default are required, and properties with a default are optional.
@@ -191,10 +198,10 @@ use defaults. Gson ignores Kotlin defaults and nullability, so a missing field b
 property.
 
 ## Sending the schema to Gemini
-The generated function returns the schema as a JSON string, ready to put in a request. With Gemini's
+`LibrarySchema.GEMINI` holds the schema as a JSON string, ready to put in a request. With Gemini's
 [Interactions API](https://ai.google.dev/gemini-api/docs/interactions/structured-output), it goes in
-`response_format.schema`. This example, adapted from
-[`Library.kt`](json-schema-tests/src/main/kotlin/samples/Library.kt), uses `Ktor` and `kotlinx.serialization`:
+`response_format.schema`. This example, adapted from the samples'
+[`Library.kt`](json-schema-tests/src/main/kotlin/com/vectornorthsystems/samples/Library.kt) and [`Gemini.kt`](json-schema-tests/src/main/kotlin/com/vectornorthsystems/samples/Gemini.kt), uses `Ktor` and `kotlinx.serialization`:
 
 ```kotlin
 @Serializable
@@ -223,7 +230,7 @@ val request = buildJsonObject {
         put("type", "text")
         put("mime_type", "application/json")
         // Parsed, so the schema is sent as a JSON object rather than a quoted string.
-        put("schema", Json.parseToJsonElement(getLibrarySchema()))
+        put("schema", Json.parseToJsonElement(LibrarySchema.GEMINI))
     }
 }
 
@@ -236,7 +243,7 @@ val response = client.post("https://generativelanguage.googleapis.com/v1beta/int
 ```
 
 The model's answer is JSON that matches the schema, in the text of the response's `model_output` steps
-([`Library.kt`](json-schema-tests/src/main/kotlin/samples/Library.kt) shows how to read it). It decodes straight into the root class:
+([`Gemini.kt`](json-schema-tests/src/main/kotlin/com/vectornorthsystems/samples/Gemini.kt) shows how to read it). It decodes straight into the root class:
 
 ```kotlin
 val library = Json.decodeFromString<Library>(outputText)
@@ -249,9 +256,34 @@ to `application/json`. Don't use `responseSchema`: it takes Gemini's OpenAPI-bas
 
 ## Reference
 
-Annotate a class with `@SchemaRoot` and call the generated `get${ClassName}Schema()`, in the same package, or the
-function named by `@SchemaRoot(functionName = "...")`. Nested classes with the same name in the same package need
-different function names. The rules below describe the schema it returns.
+Annotate a class with `@SchemaRoot` and use the generated `${ClassName}Schema` object, in the same package, or the
+object named by `@SchemaRoot(name = "...")`. Nested classes with the same name in the same package need different
+names. The object has a `String` constant per dialect, named after it (`GEMINI`), and `get(target)` and
+`getOrNull(target)` to pick one at runtime. The rules below describe the schemas it holds.
+
+### Dialects
+Each AI provider accepts its own subset of JSON Schema, so the schemas are generated per dialect, listed in
+`SchemaTarget`. Today that's `GEMINI` only (see [Roadmap](#roadmap)).
+
+By default, every dialect is generated. To narrow them down for a module, pass a comma separated list, as a
+KSP argument:
+
+```kotlin
+// build.gradle.kts
+ksp {
+    arg("jsonSchema.targets", "gemini")
+}
+```
+
+A class can set its own dialects, overriding the module's:
+
+```kotlin
+@SchemaRoot(targets = [SchemaTarget.GEMINI])
+data class Complex(val real: Double, val imaginary: Double)
+```
+
+For a dialect that wasn't generated for the class, `getOrNull(target)` gives `null`, and `get(target)` throws an
+`IllegalArgumentException` that says where to add it.
 
 ### Types
 | Kotlin                                                            | Schema                                                 |
@@ -320,12 +352,18 @@ These fail the build, pointing at the property:
 These fail the build, pointing at the class:
 - A root with type parameters, or an enum, interface, annotation class, sealed class or abstract class used as a root.
   Roots must be concrete classes or objects; enum properties remain supported.
-- A `functionName` that isn't a valid Kotlin identifier, or a function name already generated in the package.
+- A `name` that isn't a valid Kotlin identifier, or an object name already generated in the package.
+- A dialect in `@SchemaRoot(targets)` that the processor doesn't know.
+
+These fail the build too, without pointing at code:
+- An unknown dialect in the `jsonSchema.targets` KSP argument, or an empty list.
+
+Unknown `jsonSchema.*` KSP arguments are ignored with a warning, since they are likely typos.
 
 Java classes aren't mapped yet, so they're described by their private fields or fail (see [Roadmap](#roadmap)).
 
 ## Known Issues
-- **Generated filename collisions.** Custom function names such as `foo` and `Foo` both produce `Foo.kt`, causing
+- **Generated filename collisions.** Custom object names such as `foo` and `Foo` both produce `Foo.kt`, causing
   a build failure. Choose names that differ beyond capitalization of the first character.
   See [#8](https://github.com/Vector-North-Systems/json-schema/issues/8).
 - **Classes from compiled libraries.** Required properties come from constructor defaults, which haven't been tested
