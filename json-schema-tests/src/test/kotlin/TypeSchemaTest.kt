@@ -10,6 +10,55 @@ import kotlin.test.Test
 class TypeSchemaTest {
 
     @Test
+    fun `nullable enums list null among their values, wherever they appear`() {
+        assertSchema(
+            """
+                {
+                  "type": "object",
+                  "properties": {
+                    "system": {
+                      "type": ["string", "null"],
+                      "enum": ["METRIC", "IMPERIAL", null]
+                    },
+                    "fallback": {
+                      "type": "string",
+                      "enum": ["METRIC", "IMPERIAL"]
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": ["string", "null"],
+                        "enum": ["METRIC", "IMPERIAL", null]
+                      }
+                    },
+                    "bySite": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": ["string", "null"],
+                        "enum": ["METRIC", "IMPERIAL", null]
+                      }
+                    },
+                    "preferred": {
+                      "type": ["array", "null"],
+                      "items": {
+                        "type": "string",
+                        "enum": ["METRIC", "IMPERIAL"]
+                      }
+                    }
+                  },
+                  "required": [
+                    "system",
+                    "fallback",
+                    "history",
+                    "bySite"
+                  ]
+                }
+            """.trimIndent(),
+            getUnitPreferencesSchema()
+        )
+    }
+
+    @Test
     fun `nullable types allow null, independently of being required`() {
         assertSchema(
             """
@@ -50,7 +99,8 @@ class TypeSchemaTest {
                       ],
                       "enum": [
                         "METRIC",
-                        "IMPERIAL"
+                        "IMPERIAL",
+                        null
                       ]
                     },
                     "quantity": {

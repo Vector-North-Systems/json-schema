@@ -7,6 +7,11 @@ or the API (annotations).
 
 ## [Unreleased]
 
+### Fixed
+- Nullable enums list `null` among their `enum` values, not only in their `type`, so JSON Schema validators and AI
+  models accept an explicit `null`. Before, the schema wasn't compliant.
+  See [#10](https://github.com/Vector-North-Systems/json-schema/issues/10).
+
 ### Removed
 - The `@SchemaPrefixItems` annotation, deprecated in 0.2.0. This breaks the build of code that still uses it: remove
   the annotation, or replace the array with a data class whose properties have the types you need.

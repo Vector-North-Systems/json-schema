@@ -237,6 +237,86 @@ class SchemaWriterTest {
     }
 
     @Test
+    fun `a nullable enum lists null after its values`() {
+        // Given a string property that is a nullable enum:
+        val root = root(
+            property("color", PrimitiveNode(PrimitiveType.STRING, enum = listOf("RED", "GREEN")).apply {
+                nullable = true
+            })
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect null in the type, and the null literal as the last value, so null passes the enum too:
+        assertEquals(
+            """{"type":"object","properties":{"color":{"type":["string","null"],"enum":["RED","GREEN",null]}},""" +
+                    """"required":["color"]}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `an enum value named null stays a string next to the null literal`() {
+        // Given a nullable enum with an entry named "null", as a backticked Kotlin entry can be:
+        val root = root(
+            property("weird", PrimitiveNode(PrimitiveType.STRING, enum = listOf("null")).apply { nullable = true })
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect the entry quoted as a string, and the null option unquoted:
+        assertEquals(
+            """{"type":"object","properties":{"weird":{"type":["string","null"],"enum":["null",null]}},""" +
+                    """"required":["weird"]}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `nullable enum items and map values list null`() {
+        // Given a list and a map whose elements are a nullable enum:
+        fun nullableColor() = PrimitiveNode(PrimitiveType.STRING, enum = listOf("RED")).apply { nullable = true }
+        val root = root(
+            property("history", ArrayNode(nullableColor())),
+            property("bySite", MapNode(nullableColor())),
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect null among the values of each element's enum:
+        assertEquals(
+            """{"type":"object","properties":{""" +
+                    """"history":{"type":"array","items":{"type":["string","null"],"enum":["RED",null]}},""" +
+                    """"bySite":{"type":"object","additionalProperties":{"type":["string","null"],"enum":["RED",null]}}},""" +
+                    """"required":["history","bySite"]}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `a non-null enum in a nullable list doesn't list null`() {
+        // Given a nullable list whose items are a non-null enum:
+        val root = root(
+            property("colors", ArrayNode(PrimitiveNode(PrimitiveType.STRING, enum = listOf("RED"))).apply {
+                nullable = true
+            })
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect null only on the list, not among the item's values:
+        assertEquals(
+            """{"type":"object","properties":{"colors":{"type":["array","null"],""" +
+                    """"items":{"type":"string","enum":["RED"]}}},"required":["colors"]}""",
+            schema
+        )
+    }
+
+    @Test
     fun `a format follows the type`() {
         // Given a string property with a format:
         val root = root(property("at", string().apply { format = "date-time" }))
