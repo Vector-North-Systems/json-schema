@@ -1,6 +1,7 @@
 package com.vectornorthsystems.jsonschema.processor.transformers
 
 import com.google.devtools.ksp.symbol.KSNode
+import com.vectornorthsystems.jsonschema.SchemaTarget
 import com.vectornorthsystems.jsonschema.processor.PrimitiveType
 import com.vectornorthsystems.jsonschema.processor.node.*
 import io.mockk.mockk
@@ -8,8 +9,12 @@ import kotlin.test.*
 
 /**
  * Records the nodes each hook receives, delegating the copy to [BaseTransformerImpl].
+ * It changes nothing, so it also stands for the base itself, which is abstract.
  */
 internal class TestTransformerImpl : BaseTransformerImpl() {
+    // Any dialect: the base copies the tree the same way for all of them.
+    override val target = SchemaTarget.GEMINI
+
     val visited = mutableListOf<Node>()
 
     override fun transformProperty(node: PropertyNode) = super.transformProperty(node).also { visited += node }
@@ -167,7 +172,7 @@ class BaseTransformerImplTest {
     fun transformLeavesSourceUnchanged() {
         // Given a tree, and a copy of it taken before transforming:
         val source = tree()
-        val snapshot = BaseTransformerImpl().transform(root = source)
+        val snapshot = TestTransformerImpl().transform(root = source)
 
         // When transforming the tree...
         TestTransformerImpl().transform(root = source)
@@ -212,7 +217,7 @@ class BaseTransformerImplTest {
         val source = property("name", PrimitiveNode(PrimitiveType.STRING).common(), required = true).common()
 
         // When transforming...
-        val copy = BaseTransformerImpl().transformProperty(source)
+        val copy = TestTransformerImpl().transformProperty(source)
 
         // We expect an equal copy:
         assertCopy(source, copy)
@@ -228,7 +233,7 @@ class BaseTransformerImplTest {
         }.common()
 
         // When transforming...
-        val copy = BaseTransformerImpl().transformPrimitiveNode(source)
+        val copy = TestTransformerImpl().transformPrimitiveNode(source)
 
         // We expect an equal copy:
         assertCopy(source, copy)
@@ -245,7 +250,7 @@ class BaseTransformerImplTest {
         }.common()
 
         // When transforming...
-        val copy = BaseTransformerImpl().transformObjectNode(source)
+        val copy = TestTransformerImpl().transformObjectNode(source)
 
         // We expect an equal copy:
         assertCopy(source, copy)
@@ -259,7 +264,7 @@ class BaseTransformerImplTest {
         node.properties += property("children", ArrayNode(ref))
 
         // When transforming the object...
-        val copy = BaseTransformerImpl().transformObjectNode(node)
+        val copy = TestTransformerImpl().transformObjectNode(node)
 
         // We expect a new reference that points to the copied object, not to the original:
         val copiedRef = assertIs<RefNode>(assertIs<ArrayNode>(copy.properties.single().declaration).declaration)
@@ -278,7 +283,7 @@ class BaseTransformerImplTest {
         // When transforming it...
         // We expect a failure:
         assertFailsWith<NoSuchElementException> {
-            BaseTransformerImpl().transformRefNode(RefNode(ObjectNode(name = "Unseen")))
+            TestTransformerImpl().transformRefNode(RefNode(ObjectNode(name = "Unseen")))
         }
     }
 
@@ -291,7 +296,7 @@ class BaseTransformerImplTest {
         }.common()
 
         // When transforming...
-        val copy = BaseTransformerImpl().transformArrayNode(source)
+        val copy = TestTransformerImpl().transformArrayNode(source)
 
         // We expect an equal copy:
         assertCopy(source, copy)
@@ -303,7 +308,7 @@ class BaseTransformerImplTest {
         val source = MapNode(ArrayNode(PrimitiveNode(PrimitiveType.BOOLEAN)).common()).common()
 
         // When transforming...
-        val copy = BaseTransformerImpl().transformMapNode(source)
+        val copy = TestTransformerImpl().transformMapNode(source)
 
         // We expect an equal copy:
         assertCopy(source, copy)

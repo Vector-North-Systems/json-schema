@@ -1,8 +1,8 @@
 package com.vectornorthsystems
 
-import com.vectornorthsystems.fixtures.readme.getComplexSchema
-import com.vectornorthsystems.fixtures.readme.getEventSchema
-import com.vectornorthsystems.fixtures.readme.getRecipeSchema
+import com.vectornorthsystems.fixtures.readme.ComplexSchema
+import com.vectornorthsystems.fixtures.readme.EventSchema
+import com.vectornorthsystems.fixtures.readme.RecipeSchema
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,7 +20,7 @@ class ReadmeTest {
     fun `complex example`() {
         assertEquals(
             """{"type":"object","properties":{"real":{"type":"number"},"imaginary":{"type":"number"}},"required":["real","imaginary"]}""",
-            getComplexSchema()
+            ComplexSchema.GEMINI
         )
     }
 
@@ -61,7 +61,7 @@ class ReadmeTest {
                   ]
                 }
             """.trimIndent(),
-            getRecipeSchema()
+            RecipeSchema.GEMINI
         )
     }
 
@@ -113,7 +113,7 @@ class ReadmeTest {
                   ]
                 }
             """.trimIndent(),
-            getEventSchema()
+            EventSchema.GEMINI
         )
     }
 }

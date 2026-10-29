@@ -32,7 +32,7 @@ class ReferenceSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getTreeNodeSchema()
+            TreeNodeSchema.GEMINI
         )
     }
 
@@ -75,7 +75,7 @@ class ReferenceSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getOrganizationSchema()
+            OrganizationSchema.GEMINI
         )
     }
 
@@ -125,7 +125,7 @@ class ReferenceSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getOrgSchema()
+            OrgSchema.GEMINI
         )
     }
 
@@ -162,13 +162,13 @@ class ReferenceSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getCustomerSchema()
+            CustomerSchema.GEMINI
         )
     }
 
     @Test
     fun `more than 32 sibling classes do not hit the depth limit`() {
-        val schema = Json.parseToJsonElement(getWideSchema()).jsonObject
+        val schema = Json.parseToJsonElement(WideSchema.GEMINI).jsonObject
         assertEquals(40, schema.getValue("properties").jsonObject.size)
         assertNull(schema[$$"$defs"])
     }
@@ -227,7 +227,7 @@ class ReferenceSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getShelfSchema()
+            ShelfSchema.GEMINI
         )
     }
 }

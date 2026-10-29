@@ -10,7 +10,7 @@ import java.util.IdentityHashMap
  *
  * An instance transforms one tree: it remembers the objects it copied, to point references at the copies.
  */
-internal open class BaseTransformerImpl : Transformer {
+internal abstract class BaseTransformerImpl : Transformer {
 
     /**
      * The copy of each object, by the original. A [RefNode] points back at an object further up the tree or a sibling, which is

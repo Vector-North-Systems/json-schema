@@ -28,6 +28,7 @@ fun ksClassDeclaration(
     qualifiedName: String = "com.example.$simpleName",
     declarations: List<KSDeclaration> = emptyList(),
     properties: List<KSPropertyDeclaration> = emptyList(),
+    annotations: List<KSAnnotation> = emptyList(),
 ): KSClassDeclaration = mockk {
     every { classKind } returns kind
     every { this@mockk.modifiers } returns modifiers
@@ -36,6 +37,7 @@ fun ksClassDeclaration(
     every { this@mockk.qualifiedName } returns ksName(qualifiedName)
     every { this@mockk.declarations } returns declarations.asSequence()
     every { getAllProperties() } returns properties.asSequence()
+    every { this@mockk.annotations } returns annotations.asSequence()
 }
 
 /**

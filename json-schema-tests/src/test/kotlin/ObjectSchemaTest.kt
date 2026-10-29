@@ -24,7 +24,7 @@ class ObjectSchemaTest {
                 }
               }
             }
-            """, actual = getComplexSchema()
+            """, actual = ComplexSchema.GEMINI
         )
     }
 
@@ -98,7 +98,7 @@ class ObjectSchemaTest {
               ]
             }
             """,
-            getRecipeSchema()
+            RecipeSchema.GEMINI
         )
     }
 
@@ -118,7 +118,7 @@ class ObjectSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getAccountSchema()
+            AccountSchema.GEMINI
         )
     }
 
@@ -141,7 +141,7 @@ class ObjectSchemaTest {
                   ]
                 }
             """.trimIndent(),
-            getMemberSchema()
+            MemberSchema.GEMINI
         )
     }
 
@@ -164,7 +164,7 @@ class ObjectSchemaTest {
                   ]
                 }
                 """.trimIndent(),
-            actual = getBodyPropertiesSchema()
+            actual = BodyPropertiesSchema.GEMINI
         )
     }
 
@@ -181,7 +181,7 @@ class ObjectSchemaTest {
                   }
                 }
             """.trimIndent(),
-            getSessionSchema()
+            SessionSchema.GEMINI
         )
     }
 }
