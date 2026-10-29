@@ -7,6 +7,8 @@ or the API (annotations).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-29
+
 ### Added
 - Dialects: `SchemaTarget` lists the subsets of JSON Schema a schema can be generated for, `GEMINI` for now. Each
   `@SchemaRoot` class gets one schema per dialect.

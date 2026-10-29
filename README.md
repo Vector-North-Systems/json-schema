@@ -31,8 +31,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.vectornorthsystems:json-schema-annotations:0.2.0")
-    ksp("com.vectornorthsystems:json-schema-ksp:0.2.0")
+    implementation("com.vectornorthsystems:json-schema-annotations:0.3.0")
+    ksp("com.vectornorthsystems:json-schema-ksp:0.3.0")
 }
 ```
 
@@ -53,15 +53,12 @@ data class Complex(
 ```kotlin
 object ComplexSchema {
     const val GEMINI: String = """{"type":"object","properties":{"real":{"type":"number"},"imaginary":{"type":"number"}},"required":["real","imaginary"]}"""
-
-    operator fun get(target: SchemaTarget): String = when (target) {
-        SchemaTarget.GEMINI -> GEMINI
-    }
+    // ...Other fields
 }
 ```
 
-Use the constant of the dialect you need, `ComplexSchema.GEMINI`, or pick one at runtime with
-`ComplexSchema[SchemaTarget.GEMINI]`. See [Dialects](#dialects).
+The object exposes a constant property per supported dialect.
+Use the constant to access the schema you need, `ComplexSchema.GEMINI` in the example. See [Dialects](#dialects) for more.
 
 The schemas are minified. The examples below are formatted for readability, so the one above reads:
 
@@ -79,9 +76,10 @@ The schemas are minified. The examples below are formatted for readability, so t
 To choose the generated object's name, use `@SchemaRoot(name = "ComplexJsonSchema")`.
 The object is public, or `internal` when the class is internal or private.
 
-The schema follows the structure and types of the class, including nullability. Constructor parameters without a
-default are required, and properties with a default are optional.
-See [Required and nullable properties](#required-and-nullable-properties). Another example:
+The schema follows the structure and types of the class, including nullability.
+See [Required and nullable properties](#required-and-nullable-properties).
+
+Another example:
 
 ```kotlin
 data class Ingredient(
@@ -95,8 +93,11 @@ data class Recipe(
     val isColdDish: Boolean? = null
 )
 ```
-Produces the following schema. `isColdDish` allows `null`, and the AI model may leave it out, since it has a default:
+Produces the schema below for the `GEMINI` dialect. In this case `isColdDish` allows `null`, and the AI model may
+leave it out, since it has a default. In this dialect, constructor parameters without a default are marked required,
+and properties with a default are optional.
 ```json
+// GEMINI dialect
 {
   "type": "object",
   "properties": {
