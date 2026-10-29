@@ -7,14 +7,29 @@ or the API (annotations).
 
 ## [Unreleased]
 
-### Fixed
-- Nullable enums list `null` among their `enum` values, not only in their `type`, so JSON Schema validators and AI
-  models accept an explicit `null`. Before, the schema wasn't compliant.
-  See [#10](https://github.com/Vector-North-Systems/json-schema/issues/10).
+### Added
+- Dialects: `SchemaTarget` lists the subsets of JSON Schema a schema can be generated for, `GEMINI` for now. Each
+  `@SchemaRoot` class gets one schema per dialect.
+- The `jsonSchema.targets` KSP argument, a comma separated list of the dialects to generate in the module. All of them
+  are generated without it. An unknown dialect or an empty list fails the build.
+- `@SchemaRoot(targets)`, to set the dialects of a class, overriding the module's.
+- A warning for unknown `jsonSchema.*` KSP arguments, which are likely typos.
+
+### Changed
+- The schemas are in a generated object instead of a function: `{ClassName}Schema`, with a constant per dialect, and
+  `get(target)` and `getOrNull(target)` to pick one at runtime. This breaks code that calls the generated functions:
+  replace `getComplexSchema()` with `ComplexSchema.GEMINI`.
+- `@SchemaRoot(functionName)` is renamed to `@SchemaRoot(name)`, and names the object. This breaks the build of code
+  that sets it: rename the argument, and choose a name for an object, e.g. `ComplexJsonSchema`.
 
 ### Removed
 - The `@SchemaPrefixItems` annotation, deprecated in 0.2.0. This breaks the build of code that still uses it: remove
   the annotation, or replace the array with a data class whose properties have the types you need.
+
+### Fixed
+- Nullable enums list `null` among their `enum` values, not only in their `type`, so JSON Schema validators and AI
+  models accept an explicit `null`. Before, the schema wasn't compliant.
+  See [#10](https://github.com/Vector-North-Systems/json-schema/issues/10).
 
 ## [0.2.0] - 2026-10-27
 
