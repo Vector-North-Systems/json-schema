@@ -5,3 +5,4 @@ rootProject.name = "json-schema"
 include("json-schema-ksp")
 include("json-schema-annotations")
 include("json-schema-tests")
+include("json-schema-tests:ksp-dialect-gemini")

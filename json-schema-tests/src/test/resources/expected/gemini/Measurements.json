@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "grade": {
+      "type": "string"
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    }
+  }
+}

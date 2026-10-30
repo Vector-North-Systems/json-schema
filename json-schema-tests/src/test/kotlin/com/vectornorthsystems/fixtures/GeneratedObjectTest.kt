@@ -1,8 +1,7 @@
-package com.vectornorthsystems
+package com.vectornorthsystems.fixtures
 
-import com.vectornorthsystems.fixtures.*
+import com.vectornorthsystems.assertSchema
 import com.vectornorthsystems.jsonschema.SchemaTarget
-
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

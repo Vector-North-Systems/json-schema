@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "handle": {
+      "type": "string"
+    },
+    "home": {
+      "$ref": "#/$defs/Residence"
+    },
+    "previous": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Residence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "handle",
+    "home"
+  ],
+  "$defs": {
+    "Residence": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        },
+        "zip": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "city",
+        "zip"
+      ]
+    }
+  }
+}
