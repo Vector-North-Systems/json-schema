@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "length": {
+      "type": "integer"
+    },
+    "mass": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "length"
+  ]
+}

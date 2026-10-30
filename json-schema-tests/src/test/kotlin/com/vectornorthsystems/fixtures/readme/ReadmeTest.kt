@@ -1,9 +1,6 @@
-package com.vectornorthsystems
+package com.vectornorthsystems.fixtures.readme
 
-import com.vectornorthsystems.fixtures.readme.ComplexSchema
-import com.vectornorthsystems.fixtures.readme.EventSchema
-import com.vectornorthsystems.fixtures.readme.RecipeSchema
-import kotlinx.serialization.json.Json
+import com.vectornorthsystems.assertSchema
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,10 +8,6 @@ import kotlin.test.assertEquals
  * Checks the examples in the README, so the schemas it shows are the ones generated. Keep both in sync.
  */
 class ReadmeTest {
-
-    private fun assertSchema(expected: String, actual: String) {
-        assertEquals(Json.parseToJsonElement(expected), Json.parseToJsonElement(actual))
-    }
 
     @Test
     fun `complex example`() {

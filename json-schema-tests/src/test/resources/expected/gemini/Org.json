@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "properties": {
+    "ceo": {
+      "$ref": "#/$defs/Employee"
+    },
+    "cto": {
+      "$ref": "#/$defs/Employee"
+    }
+  },
+  "$defs": {
+    "Employee": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "reports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Employee"
+          }
+        },
+        "manager": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Employee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "ceo",
+    "cto"
+  ]
+}

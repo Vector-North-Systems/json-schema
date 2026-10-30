@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "joined": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id"
+  ]
+}

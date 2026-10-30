@@ -1,0 +1,59 @@
+{
+  "type": "object",
+  "properties": {
+    "array": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mutableList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "set": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "mutableSet": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "collection": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "mutableCollection": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "iterable": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "mutableIterable": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  }
+}
