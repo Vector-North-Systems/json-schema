@@ -1,7 +1,5 @@
-package com.vectornorthsystems
+package com.vectornorthsystems.fixtures
 
-import com.vectornorthsystems.fixtures.DollarsSchema
-import com.vectornorthsystems.fixtures.EscapingSchema
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
