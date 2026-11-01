@@ -96,7 +96,6 @@ Produces the schema below for the `GEMINI` dialect. In this case `isColdDish` al
 leave it out, since it has a default. In this dialect, constructor parameters without a default are marked required,
 and properties with a default are optional.
 ```json
-// GEMINI dialect
 {
   "type": "object",
   "properties": {
@@ -145,7 +144,7 @@ data class Event(
     val speakers: List<String>
 )
 ```
-Produces:
+Produces, for the `GEMINI` dialect:
 ```json
 {
   "type": "object",
@@ -217,6 +216,7 @@ data class Book(
     val rating: Double? = null,
 )
 
+// @SchemaRoot generates LibrarySchema; @Serializable lets kotlinx.serialization decode the response.
 @Serializable
 @SchemaRoot
 data class Library(
