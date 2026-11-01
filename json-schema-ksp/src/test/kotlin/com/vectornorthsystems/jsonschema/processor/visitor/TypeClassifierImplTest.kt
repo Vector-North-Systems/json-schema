@@ -5,7 +5,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.vectornorthsystems.jsonschema.processor.PrimitiveType
 import com.vectornorthsystems.jsonschema.processor.doubles.ksClassDeclaration
 import com.vectornorthsystems.jsonschema.processor.doubles.ksDeclaration
-import com.vectornorthsystems.jsonschema.processor.doubles.ksPropertyOf
+import com.vectornorthsystems.jsonschema.processor.doubles.ksProperty
 import com.vectornorthsystems.jsonschema.processor.doubles.ksType
 import com.vectornorthsystems.jsonschema.processor.doubles.ksTypeAlias
 import com.vectornorthsystems.jsonschema.processor.doubles.ksTypeParameter
@@ -127,7 +127,7 @@ class TypeClassifierImplTest {
     @Test
     fun `a value class without a backing field is unsupported`() {
         // Given a value class whose only property has no backing field:
-        val property = ksPropertyOf(ksType("kotlin.String"), hasBackingField = false)
+        val property = ksProperty(type = ksType("kotlin.String"), hasBackingField = false)
         val type = ksType(ksClassDeclaration(modifiers = setOf(Modifier.VALUE), properties = listOf(property)))
 
         // When classifying...
@@ -338,7 +338,7 @@ class TypeClassifierImplTest {
             val underlying = ksType("kotlin.String")
             val declaration = ksClassDeclaration(
                 modifiers = setOf(modifier),
-                properties = listOf(ksPropertyOf(underlying))
+                properties = listOf(ksProperty(type = underlying))
             )
 
             // When classifying...
@@ -356,8 +356,8 @@ class TypeClassifierImplTest {
         val declaration = ksClassDeclaration(
             modifiers = setOf(Modifier.VALUE),
             properties = listOf(
-                ksPropertyOf(ksType("kotlin.String"), hasBackingField = false),
-                ksPropertyOf(underlying),
+                ksProperty(type = ksType("kotlin.String"), hasBackingField = false),
+                ksProperty(type = underlying),
             )
         )
 
@@ -372,7 +372,7 @@ class TypeClassifierImplTest {
     fun `a nullable value class is resolved as its non-null type`() {
         // Given a value class property, and a nullable type of it that makes a non-null type:
         val underlying = ksType("kotlin.String")
-        val property = ksPropertyOf(underlying)
+        val property = ksProperty(type = underlying)
         val declaration = ksClassDeclaration(modifiers = setOf(Modifier.VALUE), properties = listOf(property))
         val nonNull = ksType(declaration)
         val nullable = ksType(declaration, nullable = true)

@@ -7,19 +7,18 @@ Generates a [JSON Schema](https://json-schema.org/overview/what-is-jsonschema) f
 [KSP](https://kotlinlang.org/docs/ksp-overview.html).
 
 JSON Schema is a standard for describing the structure and rules of JSON data. One common use is structured output from
-generative AI models: you send a schema with the request, and the model produces JSON that matches it, allowing parsing
-the response, and often decoding it directly to classes.
+generative AI models: you send a schema with the request, and the model produces JSON that adheres to it.
 The schemas produced by this library follow the subset of JSON Schema
 that [Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support). Support for the
-subsets of other major AI providers is planned, see [Roadmap](#roadmap).
+subsets of other major AI providers is planned; see [Roadmap](#roadmap).
 
-Your Kotlin classes are the single source of truth. Change them as your needs change (add a property, nest a new
-class, make a field optional) and the next build regenerates a matching schema. The model's response maps straight
-back into the same classes, so there's no hand-written schema to keep in sync with your code.
+Your Kotlin classes are the single source of truth. Change them as your needs change (add a property, nest a
+new class, make a field optional), and the next build regenerates a matching schema. Furthermore, the model's response
+maps straight back into the same classes, so there's no hand-written schema to keep in sync with your code.
 
 Because the schemas are generated at compile time, there's no reflection and no runtime dependency: each schema is a
-string constant in a generated object. Mistakes, like a constraint on the wrong type or a type that can't be
-described, fail the build and point at the property.
+string constant in a generated object. Mistakes, like a constraint on the wrong type or a type that can't be described,
+fail the build and point at the property.
 
 ## Installation
 Apply the [KSP plugin](https://github.com/google/ksp/releases) that matches your Kotlin version, then add the annotations
@@ -118,7 +117,7 @@ and properties with a default are optional.
 }
 ```
 
-Most primitive and common collection types are supported, see [Types](#types) for how each one is mapped.
+Most primitive and common collection types are supported; see [Types](#types) for how each one is mapped.
 
 Annotations add descriptions and constraints, see [Annotations](#annotations) for the full list:
 
@@ -170,7 +169,7 @@ Produces:
   "required": ["name", "startsAt", "rating", "speakers"]
 }
 ```
-These examples are checked by `ReadmeTest` in `json-schema-tests`, check the code for more details.
+These examples are checked by `ReadmeTest` in `json-schema-tests`; check the code for more details.
 
 ### Required and nullable properties
 For the AI model, nullable and optional mean different things. A nullable field has `null` among its types, so the

@@ -5,11 +5,13 @@ import com.google.devtools.ksp.symbol.*
 import com.vectornorthsystems.jsonschema.SchemaExclude
 import com.vectornorthsystems.jsonschema.SchemaRoot
 import com.vectornorthsystems.jsonschema.SchemaTarget
+import com.vectornorthsystems.jsonschema.processor.doubles.ksEntry
 import com.vectornorthsystems.jsonschema.processor.doubles.ksAnnotation
 import com.vectornorthsystems.jsonschema.processor.doubles.ksClassDeclaration
 import com.vectornorthsystems.jsonschema.processor.doubles.ksDeclaration
 import com.vectornorthsystems.jsonschema.processor.doubles.ksName
 import com.vectornorthsystems.jsonschema.processor.doubles.ksType
+import com.vectornorthsystems.jsonschema.processor.doubles.ksParameter
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -231,6 +233,57 @@ class KsExtensionsTest {
 
     // endregion
 
+    // region enumEntryName
+
+    @Test
+    fun `enum entry names come from types and declarations, anything else has none`() {
+        // Given an entry as a type, as a declaration, and values that aren't entries:
+        val asType = ksType(ksEntry("GEMINI"))
+        val asDeclaration = ksEntry("GEMINI")
+
+        // When reading their names...
+        // We expect the entry's name for the first two, and null for the others:
+        assertEquals("GEMINI", enumEntryName(asType))
+        assertEquals("GEMINI", enumEntryName(asDeclaration))
+        assertNull(enumEntryName("GEMINI"))
+        assertNull(enumEntryName(null))
+    }
+
+    // endregion
+
+    // region parametersWithoutDefault
+
+    @Test
+    fun `parameters without a default are the ones a decoder needs`() {
+        // Given a constructor with parameters with and without defaults, and one without a name:
+        val declaration = ksClassDeclaration()
+        every { declaration.primaryConstructor?.parameters } returns listOf(
+            ksParameter("id", hasDefault = false),
+            ksParameter("name", hasDefault = true),
+            ksParameter("email", hasDefault = false),
+            ksParameter(null, hasDefault = false),
+        )
+
+        // When reading the parameters without a default...
+        val withoutDefault = declaration.parametersWithoutDefault()
+
+        // We expect the named ones without a default:
+        assertEquals(setOf("id", "email"), withoutDefault)
+    }
+
+    @Test
+    fun `a class without a primary constructor has no parameters without a default`() {
+        // Given a class without a primary constructor, such as an object:
+        val declaration = ksClassDeclaration(kind = ClassKind.OBJECT)
+        every { declaration.primaryConstructor } returns null
+
+        // When reading the parameters without a default...
+        // We expect none:
+        assertEquals(emptySet(), declaration.parametersWithoutDefault())
+    }
+
+    // endregion
+
     // region dialects
 
     /**
@@ -245,17 +298,11 @@ class KsExtensionsTest {
         )
     )
 
-    /**
-     * An enum entry argument, named [entryName].
-     */
-    private fun entry(entryName: String): KSClassDeclaration =
-        ksClassDeclaration(kind = ClassKind.ENUM_ENTRY, simpleName = entryName)
-
     @Test
     fun `an unknown target is an error pointing at the class`() {
         // Given a root asking for a target this processor doesn't know, next to a known one:
         val logger = mockk<KSPLogger>(relaxed = true)
-        val root = rootWithTargets(arrayOf(entry("GEMINI"), entry("OPENAI")))
+        val root = rootWithTargets(arrayOf(ksEntry("GEMINI"), ksEntry("OPENAI")))
 
         // When reading its targets...
         val targets = root.dialects(logger)
@@ -299,10 +346,10 @@ class KsExtensionsTest {
     fun `targets are read from enum entries given as declarations or types`() {
         // Given targets as an array of declarations, as a list, and as a type (older KSP versions):
         val logger = mockk<KSPLogger>(relaxed = true)
-        val asType = ksType(entry("GEMINI"))
+        val asType = ksType(ksEntry("GEMINI"))
         val roots = listOf(
-            rootWithTargets(arrayOf(entry("GEMINI"))),
-            rootWithTargets(listOf(entry("GEMINI"))),
+            rootWithTargets(arrayOf(ksEntry("GEMINI"))),
+            rootWithTargets(listOf(ksEntry("GEMINI"))),
             rootWithTargets(arrayOf(asType)),
         )
 

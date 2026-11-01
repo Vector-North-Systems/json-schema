@@ -3,6 +3,7 @@ plugins {
     kotlin("plugin.serialization") version "2.4.20" apply false
     id("com.google.devtools.ksp") version "2.3.10" apply false
     id("com.vanniktech.maven.publish") version "0.37.0" apply false
+    id("org.jetbrains.kotlinx.kover") version "0.9.11" apply false
 }
 
 // POM metadata shared by every published module.

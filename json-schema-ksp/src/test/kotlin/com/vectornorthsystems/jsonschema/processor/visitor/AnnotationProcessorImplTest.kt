@@ -47,7 +47,7 @@ class AnnotationProcessorImplTest {
     private fun formatAnnotation(entry: String) = schemaAnnotation("SchemaFormat", "format" to enumEntry(entry))
 
     private fun unannotated(): KSPropertyDeclaration = ksProperty(
-        seed = listOf(ksAnnotation("kotlinx.serialization.Serializable"), ksAnnotation("kotlin.jvm.JvmInline"))
+        annotations = listOf(ksAnnotation("kotlinx.serialization.Serializable"), ksAnnotation("kotlin.jvm.JvmInline"))
     )
 
     private fun verifyNoErrors() = verify(exactly = 0) { logger.error(any(), any()) }
@@ -74,7 +74,7 @@ class AnnotationProcessorImplTest {
     fun `properties with a title and description write them to the node`() {
         // Given a property declaration with a title and a description:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaTitle", "text" to "A title"),
                 schemaAnnotation("SchemaDescription", "text" to "A description"),
             )
@@ -94,7 +94,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `a title without a description only writes the title`() {
         // Given a property declaration with a title only:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaTitle", "text" to "A title")))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaTitle", "text" to "A title")))
 
         // And the supplied node:
         val node = propertyNode()
@@ -114,7 +114,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `format on a non-primitive property is an error`() {
         // Given a property declaration with a format:
-        val property = ksProperty(seed = listOf(formatAnnotation("DATE")))
+        val property = ksProperty(annotations = listOf(formatAnnotation("DATE")))
 
         // When processing it against an object node...
         processor.processStringAnnotations(property, ObjectNode("Test"))
@@ -126,7 +126,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `format on a non-string primitive is an error and leaves the node untouched`() {
         // Given a property declaration with a format:
-        val property = ksProperty(seed = listOf(formatAnnotation("DATE")))
+        val property = ksProperty(annotations = listOf(formatAnnotation("DATE")))
 
         // And an integer node:
         val node = PrimitiveNode(PrimitiveType.INTEGER)
@@ -142,7 +142,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `format on an enum is an error and leaves the node untouched`() {
         // Given a property declaration with a format:
-        val property = ksProperty(seed = listOf(formatAnnotation("DATE")))
+        val property = ksProperty(annotations = listOf(formatAnnotation("DATE")))
 
         // And a string node that is an enum:
         val node = PrimitiveNode(PrimitiveType.STRING, enum = listOf("A", "B"))
@@ -175,7 +175,7 @@ class AnnotationProcessorImplTest {
     fun `format on a string property is written to the node`() {
         SchemaFormat.Format.entries.forEach { format ->
             // Given a property declaration with each supported format:
-            val property = ksProperty(seed = listOf(formatAnnotation(format.name)))
+            val property = ksProperty(annotations = listOf(formatAnnotation(format.name)))
 
             // And a string node:
             val node = PrimitiveNode(PrimitiveType.STRING)
@@ -199,7 +199,7 @@ class AnnotationProcessorImplTest {
     fun `a non-finite minimum is an error`() {
         listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).forEach { minimum ->
             // Given a property declaration with a minimum that is not a finite number:
-            val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinimum", "value" to minimum)))
+            val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMinimum", "value" to minimum)))
 
             // When processing it against an integer node...
             processor.processIntegerAnnotations(property, PrimitiveNode(PrimitiveType.INTEGER))
@@ -213,7 +213,7 @@ class AnnotationProcessorImplTest {
     fun `a non-finite maximum is an error`() {
         listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).forEach { maximum ->
             // Given a property declaration with a maximum that is not a finite number:
-            val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMaximum", "value" to maximum)))
+            val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMaximum", "value" to maximum)))
 
             // When processing it against an integer node...
             processor.processIntegerAnnotations(property, PrimitiveNode(PrimitiveType.INTEGER))
@@ -227,7 +227,7 @@ class AnnotationProcessorImplTest {
     fun `limits on a non-number property are an error and leave the node untouched`() {
         // Given a property declaration with a minimum and a maximum:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinimum", "value" to 1.0),
                 schemaAnnotation("SchemaMaximum", "value" to 5.0),
             )
@@ -248,7 +248,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `limits on a non-primitive property are an error`() {
         // Given a property declaration with a minimum:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinimum", "value" to 1.0)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMinimum", "value" to 1.0)))
 
         // When processing it against an object node...
         processor.processIntegerAnnotations(property, ObjectNode("Test"))
@@ -261,7 +261,7 @@ class AnnotationProcessorImplTest {
     fun `a minimum greater than the maximum is an error`() {
         // Given a property declaration whose minimum is above its maximum:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinimum", "value" to 10.0),
                 schemaAnnotation("SchemaMaximum", "value" to 5.0),
             )
@@ -296,7 +296,7 @@ class AnnotationProcessorImplTest {
         listOf(PrimitiveType.INTEGER, PrimitiveType.NUMBER).forEach { type ->
             // Given a property declaration with a minimum and a maximum:
             val property = ksProperty(
-                seed = listOf(
+                annotations = listOf(
                     schemaAnnotation("SchemaMinimum", "value" to 1.0),
                     schemaAnnotation("SchemaMaximum", "value" to 5.0),
                 )
@@ -320,7 +320,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `a minimum alone leaves the maximum untouched`() {
         // Given a property declaration with a minimum only:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinimum", "value" to 1.0)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMinimum", "value" to 1.0)))
 
         // And an integer node:
         val node = PrimitiveNode(PrimitiveType.INTEGER)
@@ -337,7 +337,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `a maximum alone leaves the minimum untouched`() {
         // Given a property declaration with a maximum only:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMaximum", "value" to 5.0)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMaximum", "value" to 5.0)))
 
         // And an integer node:
         val node = PrimitiveNode(PrimitiveType.INTEGER)
@@ -354,7 +354,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `limits override the minimum of unsigned types`() {
         // Given a property declaration with a negative minimum:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinimum", "value" to -5.0)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMinimum", "value" to -5.0)))
 
         // And an integer node that starts at 0, like unsigned types do:
         val node = PrimitiveNode(PrimitiveType.INTEGER).apply { minimum = 0.0 }
@@ -371,7 +371,7 @@ class AnnotationProcessorImplTest {
     fun `equal limits are valid`() {
         // Given a property declaration whose minimum equals its maximum:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinimum", "value" to 3.0),
                 schemaAnnotation("SchemaMaximum", "value" to 3.0),
             )
@@ -392,7 +392,7 @@ class AnnotationProcessorImplTest {
     fun `item limits on a non-array property are an error`() {
         // Given a property declaration with a minimum and a maximum number of items:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinItems", "value" to 1),
                 schemaAnnotation("SchemaMaxItems", "value" to 5),
             )
@@ -413,7 +413,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `a negative minimum number of items is an error`() {
         // Given a property declaration with a negative minimum number of items:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMinItems", "value" to -1)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMinItems", "value" to -1)))
 
         // When processing it against an array node...
         processor.processArrayAnnotations(property, arrayNode())
@@ -425,7 +425,7 @@ class AnnotationProcessorImplTest {
     @Test
     fun `a negative maximum number of items is an error`() {
         // Given a property declaration with a negative maximum number of items:
-        val property = ksProperty(seed = listOf(schemaAnnotation("SchemaMaxItems", "value" to -1)))
+        val property = ksProperty(annotations = listOf(schemaAnnotation("SchemaMaxItems", "value" to -1)))
 
         // When processing it against an array node...
         processor.processArrayAnnotations(property, arrayNode())
@@ -438,7 +438,7 @@ class AnnotationProcessorImplTest {
     fun `a minimum number of items greater than the maximum is an error`() {
         // Given a property declaration whose minimum number of items is above its maximum:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinItems", "value" to 5),
                 schemaAnnotation("SchemaMaxItems", "value" to 2),
             )
@@ -472,7 +472,7 @@ class AnnotationProcessorImplTest {
     fun `item limits are written to the array node`() {
         // Given a property declaration with a minimum and a maximum number of items:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinItems", "value" to 1),
                 schemaAnnotation("SchemaMaxItems", "value" to 5),
             )
@@ -494,7 +494,7 @@ class AnnotationProcessorImplTest {
     fun `zero items is a valid limit`() {
         // Given a property declaration whose minimum and maximum number of items are both zero:
         val property = ksProperty(
-            seed = listOf(
+            annotations = listOf(
                 schemaAnnotation("SchemaMinItems", "value" to 0),
                 schemaAnnotation("SchemaMaxItems", "value" to 0),
             )
