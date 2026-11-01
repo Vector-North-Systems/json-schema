@@ -91,16 +91,30 @@ fun ksType(declaration: KSDeclaration, vararg arguments: KSType?, nullable: Bool
 }
 
 /**
- * Builds and returns a mock [KSPropertyDeclaration].
+ * Builds and returns a mock [KSPropertyDeclaration], which is [type] when seen as a member of any type.
  */
-fun ksProperty(seed: List<KSAnnotation>): KSPropertyDeclaration = mockk {
-    every { annotations } returns seed.asSequence()
+fun ksProperty(
+    name: String = "ignoredName",
+    type: KSType = mockk(),
+    hasBackingField: Boolean = true,
+    annotations: List<KSAnnotation> = emptyList(),
+): KSPropertyDeclaration = mockk {
+    every { simpleName } returns ksName(name)
+    every { this@mockk.hasBackingField } returns hasBackingField
+    every { this@mockk.annotations } returns annotations.asSequence()
+    every { asMemberOf(any()) } returns type
 }
 
 /**
- * Builds and returns a mock [KSPropertyDeclaration] that is [memberType] when seen as a member of any type.
+ * Builds and returns an enum entry argument, named [entryName].
  */
-fun ksPropertyOf(memberType: KSType, hasBackingField: Boolean = true): KSPropertyDeclaration = mockk {
-    every { this@mockk.hasBackingField } returns hasBackingField
-    every { asMemberOf(any()) } returns memberType
+fun ksEntry(entryName: String): KSClassDeclaration =
+    ksClassDeclaration(kind = ClassKind.ENUM_ENTRY, simpleName = entryName)
+
+/**
+ * Builds and returns a constructor parameter optionally named [name].
+ */
+fun ksParameter(name: String?, hasDefault: Boolean): KSValueParameter = mockk {
+    every { this@mockk.name } returns name?.let { ksName(it) }
+    every { this@mockk.hasDefault } returns hasDefault
 }

@@ -1,6 +1,8 @@
 plugins {
     kotlin("jvm")
     id("com.vanniktech.maven.publish")
+    // Coverage of the unit tests.
+    id("org.jetbrains.kotlinx.kover")
 }
 
 repositories {

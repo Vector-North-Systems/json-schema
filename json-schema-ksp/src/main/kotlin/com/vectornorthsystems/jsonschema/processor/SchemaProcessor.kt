@@ -34,7 +34,7 @@ internal class SchemaProcessor(
 ) : SymbolProcessor {
 
     /**
-     * The generated objects, by qualified name, to report clashes instead of failing to create the file.
+     * The generated objects, by lowercase qualified name, to report clashes instead of failing to create the file.
      */
     private val generated = mutableMapOf<String, KSClassDeclaration>()
 
@@ -84,7 +84,9 @@ internal class SchemaProcessor(
             return null
         }
 
-        val qualifiedName = "${classDeclaration.packageName.asString()}.$name"
+        // Compared ignoring case: the file is named after the object with a capital, so names that differ only in case
+        // would clash on their file.
+        val qualifiedName = "${classDeclaration.packageName.asString()}.$name".lowercase()
         val previous = generated.putIfAbsent(qualifiedName, classDeclaration)
         if (previous != null) {
             logger.error(

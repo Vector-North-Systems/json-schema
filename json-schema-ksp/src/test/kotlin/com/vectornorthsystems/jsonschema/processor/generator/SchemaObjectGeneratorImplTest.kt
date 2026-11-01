@@ -199,9 +199,13 @@ class SchemaObjectGeneratorImplTest {
     /**
      * A class named `Star` in `com.example`, with the given [modifiers], declared in [file].
      */
-    private fun star(file: KSFile, modifiers: Set<Modifier> = emptySet()): KSClassDeclaration = mockk {
+    private fun star(
+        file: KSFile,
+        modifiers: Set<Modifier> = emptySet(),
+        qualifiedName: String? = "com.example.Star",
+    ): KSClassDeclaration = mockk {
         every { simpleName } returns ksName("Star")
-        every { qualifiedName } returns ksName("com.example.Star")
+        every { this@mockk.qualifiedName } returns qualifiedName?.let { ksName(it) }
         every { packageName } returns ksName("com.example")
         every { this@mockk.modifiers } returns modifiers
         every { containingFile } returns file
@@ -219,6 +223,32 @@ class SchemaObjectGeneratorImplTest {
 
         // We expect it internal, since a private object in its own file couldn't be used:
         assertTrue(output.toString().contains("\ninternal object StarSchema {\n"), output.toString())
+    }
+
+    @Test
+    fun `an internal class gets an internal object`() {
+        // Given an internal class:
+        val output = ByteArrayOutputStream()
+        every { codeGenerator.createNewFile(any(), any(), any(), any()) } returns output
+
+        // When generating its object...
+        generator.generate(star(mockk(), setOf(Modifier.INTERNAL)), "StarSchema", listOf(gemini))
+
+        // We expect it internal, as the class:
+        assertTrue(output.toString().contains("\ninternal object StarSchema {\n"), output.toString())
+    }
+
+    @Test
+    fun `a class without a qualified name is linked by its simple name`() {
+        // Given a class without a qualified name, as KSP gives for local declarations:
+        val output = ByteArrayOutputStream()
+        every { codeGenerator.createNewFile(any(), any(), any(), any()) } returns output
+
+        // When generating its object...
+        generator.generate(star(mockk(), qualifiedName = null), "StarSchema", listOf(gemini))
+
+        // We expect the KDoc to link the simple name:
+        assertTrue(output.toString().contains(" * @see [Star]\n"), output.toString())
     }
 
     @Test
