@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "previous": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "count": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "previous",
+    "ids",
+    "count"
+  ]
+}

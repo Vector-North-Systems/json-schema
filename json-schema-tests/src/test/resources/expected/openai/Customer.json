@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "properties": {
+    "billing": {
+      "$ref": "#/$defs/Address"
+    },
+    "shipping": {
+      "$ref": "#/$defs/Address"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "billing",
+    "shipping"
+  ],
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "street",
+        "city"
+      ]
+    }
+  }
+}

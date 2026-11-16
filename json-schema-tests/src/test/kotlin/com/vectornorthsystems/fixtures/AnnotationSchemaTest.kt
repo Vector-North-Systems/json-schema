@@ -11,6 +11,6 @@ class AnnotationSchemaTest {
     @Test
     fun `annotations add their keywords`() {
         // `title` and a `description` with `$` and quotes, `format`, `minimum`/`maximum` and `minItems`/`maxItems`.
-        assertSchemas("Event", EventSchema::getOrNull)
+        assertSchemas(name = "Event", schemaOf = EventSchema::getOrNull)
     }
 }

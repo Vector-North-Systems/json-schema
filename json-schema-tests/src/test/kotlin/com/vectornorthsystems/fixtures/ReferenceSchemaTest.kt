@@ -15,25 +15,31 @@ class ReferenceSchemaTest {
     @Test
     fun `a root that contains itself is referenced with #`() {
         // `children` items are `{"$ref": "#"}`, with no `$defs`.
-        assertSchemas("TreeNode", TreeNodeSchema::getOrNull)
+        assertSchemas(name = "TreeNode", schemaOf = TreeNodeSchema::getOrNull)
     }
 
     @Test
     fun `a nested class that contains itself is defined once in defs`() {
         // `Employee` is in `$defs` once, and referenced from `head` and from itself.
-        assertSchemas("Organization", OrganizationSchema::getOrNull)
+        assertSchemas(name = "Organization", schemaOf = OrganizationSchema::getOrNull)
     }
 
     @Test
     fun `the same nested class should exist only once`() {
         // `ceo` and `cto` reference a single `Employee` in `$defs`.
-        assertSchemas("Org", OrgSchema::getOrNull)
+        assertSchemas(name = "Org", schemaOf = OrgSchema::getOrNull)
     }
 
     @Test
     fun `a non-recursive class used twice is defined once and referenced twice`() {
         // `billing` and `shipping` reference a single `Address` in `$defs`.
-        assertSchemas("Customer", CustomerSchema::getOrNull)
+        assertSchemas(name = "Customer", schemaOf = CustomerSchema::getOrNull)
+    }
+
+    @Test
+    fun `a described reference is wrapped in anyOf in the dialects that reject keywords next to a ref`() {
+        // GEMINI has the title and description next to the `$ref`. OPENAI has the `$ref` alone inside `anyOf`.
+        assertSchemas(name = "Delivery", schemaOf = DeliverySchema::getOrNull)
     }
 
     @Test
@@ -46,6 +52,6 @@ class ReferenceSchemaTest {
     @Test
     fun `type parameters take the type arguments of each use`() {
         // Each `Box` is inlined with the type of its use: a string, an integer, and a list of boxes of booleans.
-        assertSchemas("Shelf", ShelfSchema::getOrNull)
+        assertSchemas(name = "Shelf", schemaOf = ShelfSchema::getOrNull)
     }
 }

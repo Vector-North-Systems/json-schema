@@ -40,39 +40,23 @@ internal abstract class BaseTransformerImpl : Transformer {
      * Transforms a [PropertyNode] node.
      */
     override fun transformProperty(node: PropertyNode): PropertyNode {
-        return PropertyNode(
-            name = node.name,
-            declaration = transformNode(node.declaration),
-            source = node.source,
-            required = node.required,
-        ).copyCommon(node)
+        return node.copy(
+            declaration = transformNode(node.declaration)
+        )
     }
 
     /**
      * Transforms a [PrimitiveNode] node.
      */
     override fun transformPrimitiveNode(node: PrimitiveNode): PrimitiveNode {
-        return PrimitiveNode(
-            type = node.type,
-            enum = node.enum,
-        ).apply {
-            format = node.format
-            minimum = node.minimum
-            maximum = node.maximum
-        }.copyCommon(node)
+        return node.copy()
     }
 
     /**
      * Transforms a [ObjectNode] node.
      */
     override fun transformObjectNode(node: ObjectNode): ObjectNode {
-        val copy = ObjectNode(
-            name = node.name,
-            isRoot = node.isRoot
-        ).apply {
-            referenced = node.referenced
-            defName = node.defName
-        }.copyCommon(node)
+        val copy = node.copy()
 
         // Register before the properties, which may reference this object.
         copies[node] = copy
@@ -102,15 +86,7 @@ internal abstract class BaseTransformerImpl : Transformer {
      * Transforms a [MapNode] node.
      */
     override fun transformMapNode(node: MapNode): MapNode {
-        return MapNode(transformNode(node.declaration)).copyCommon(node)
-    }
-
-    /**
-     * Copies the fields every [Node] has from [original].
-     */
-    private fun <T : Node> T.copyCommon(original: Node): T = apply {
-        title = original.title
-        description = original.description
-        nullable = original.nullable
+        return MapNode(transformNode(node.declaration), node.source).copyCommon(node)
     }
 }
+

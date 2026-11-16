@@ -54,8 +54,11 @@ private class SchemaWriter {
     /**
      * Writes the fields of the JSON schema object for [node], without its enclosing braces,
      * so the caller decides which object the fields belong to.
+     *
+     * @param wrapReference Whether to wrap [node] in `anyOf` if it's written as a reference, see
+     * [PropertyNode.wrapDescribedReference].
      */
-    private fun writeSchema(node: Node) {
+    private fun writeSchema(node: Node, wrapReference: Boolean = false) {
         when (node) {
             is ArrayNode -> {
                 writeType(Types.ARRAY, node.nullable)
@@ -69,13 +72,13 @@ private class SchemaWriter {
             is ObjectNode -> {
                 // A recursive object is defined once in $defs, so even its first occurrence is a reference.
                 if (node.referenced && !node.isRoot) {
-                    writeRef(node, node.nullable)
+                    writeRef(node, node.nullable, wrapReference)
                 } else {
                     writeObject(node, node.nullable)
                 }
             }
 
-            is RefNode -> writeRef(node.target, node.nullable)
+            is RefNode -> writeRef(node.target, node.nullable, wrapReference)
 
             is MapNode -> {
                 writeType(Types.OBJECT, node.nullable)
@@ -104,7 +107,9 @@ private class SchemaWriter {
                 node.description?.let {
                     builder.append("\"${Description.DESCRIPTION}\":${it.toJsonString()},")
                 }
-                writeSchema(node.declaration)
+                // Only a reference with something next to it needs wrapping.
+                val described = node.title != null || node.description != null
+                writeSchema(node.declaration, wrapReference = node.wrapDescribedReference && described)
             }
         }
     }
@@ -122,6 +127,10 @@ private class SchemaWriter {
         }
         builder.append("}")
 
+        context.additionalProperties?.let { value ->
+            builder.append(",\"${ObjectProperties.ADDITIONAL_PROPERTIES}\":$value")
+        }
+
         val required = context.properties.filter { it.required }
         if (required.isNotEmpty()) {
             builder.append(",\"${ObjectProperties.REQUIRED}\":")
@@ -129,14 +138,20 @@ private class SchemaWriter {
         }
     }
 
-    private fun writeRef(target: ObjectNode, nullable: Boolean) {
+    /**
+     * Writes a reference to [target].
+     *
+     * @param wrapped Whether the reference goes inside `anyOf` even when it isn't nullable, so it has no keywords next
+     * to it. A nullable reference is already inside one.
+     */
+    private fun writeRef(target: ObjectNode, nullable: Boolean, wrapped: Boolean = false) {
         if (!target.isRoot && target !in defs) defs.add(target)
         val ref = "\"${Structure.REF}\":${target.ref.toJsonString()}"
-        // A reference has no type of its own to add "null" to.
-        if (nullable) {
-            builder.append("\"${Structure.ANY_OF}\":[{$ref},{\"${Structure.TYPE}\":\"${Types.NULL}\"}]")
-        } else {
-            builder.append(ref)
+        when {
+            // A reference has no type of its own to add "null" to.
+            nullable -> builder.append("\"${Structure.ANY_OF}\":[{$ref},{\"${Structure.TYPE}\":\"${Types.NULL}\"}]")
+            wrapped -> builder.append("\"${Structure.ANY_OF}\":[{$ref}]")
+            else -> builder.append(ref)
         }
     }
 

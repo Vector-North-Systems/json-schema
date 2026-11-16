@@ -27,10 +27,13 @@ internal sealed class Node {
  * An object node.
  * @property name The class's simple name.
  * @property isRoot Whether this is the [com.vectornorthsystems.jsonschema.SchemaRoot] object, which references point to with `#`.
+ * @property additionalProperties Whether properties other than the declared ones are allowed, written as
+ * `additionalProperties`. Nothing is written when `null`.
  */
 internal class ObjectNode(
     val name: String,
-    var isRoot: Boolean = false
+    var isRoot: Boolean = false,
+    var additionalProperties: Boolean? = null
 ) : Node() {
     /**
      * The properties of this object type.
@@ -73,8 +76,9 @@ internal class ArrayNode(val declaration: Node) : Node() {
 /**
  * A map node, an object with arbitrary keys.
  * @property declaration The schema of the map's values.
+ * @property source The source for debugging purposes.
  */
-internal class MapNode(val declaration: Node) : Node()
+internal class MapNode(val declaration: Node, val source: KSNode) : Node()
 
 /**
  * A primitive node.
@@ -115,4 +119,11 @@ internal class PropertyNode(
     val declaration: Node,
     val source: KSNode,
     val required: Boolean
-) : Node()
+) : Node() {
+    /**
+     * Whether a reference that has a title or a description is wrapped in `anyOf`, so they aren't next to the `$ref`:
+     * `{"description": "...", "anyOf": [{"$ref": "..."}]}`. For the dialects that reject other keywords next to a
+     * `$ref`.
+     */
+    var wrapDescribedReference: Boolean = false
+}

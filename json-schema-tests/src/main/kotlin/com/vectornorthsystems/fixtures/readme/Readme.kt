@@ -9,7 +9,8 @@ import com.vectornorthsystems.jsonschema.SchemaMinimum
 import com.vectornorthsystems.jsonschema.SchemaRoot
 import com.vectornorthsystems.jsonschema.SchemaTitle
 
-// The examples in the README, kept here so they're known to compile and produce what the README shows.
+// The examples in the README and the docs, kept here so they're known to compile and produce what those pages show.
+// Event is the example in docs/reference/annotations.md.
 
 @SchemaRoot
 data class Complex(

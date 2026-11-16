@@ -33,20 +33,6 @@
         ]
       }
     },
-    "bySite": {
-      "type": "object",
-      "additionalProperties": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "enum": [
-          "METRIC",
-          "IMPERIAL",
-          null
-        ]
-      }
-    },
     "preferred": {
       "type": [
         "array",
@@ -64,7 +50,6 @@
   "required": [
     "system",
     "fallback",
-    "history",
-    "bySite"
+    "history"
   ]
 }

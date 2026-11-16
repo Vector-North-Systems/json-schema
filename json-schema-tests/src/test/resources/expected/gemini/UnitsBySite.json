@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "bySite": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "METRIC",
+          "IMPERIAL",
+          null
+        ]
+      }
+    }
+  },
+  "required": [
+    "bySite"
+  ]
+}

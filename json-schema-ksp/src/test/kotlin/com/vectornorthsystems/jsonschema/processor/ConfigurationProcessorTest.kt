@@ -80,13 +80,13 @@ class ConfigurationProcessorTest {
     @Test
     fun `an unknown target is an error listing the valid ones`() {
         // Given a known and an unknown target:
-        val options = mapOf("jsonSchema.targets" to "gemini,openai")
+        val options = mapOf("jsonSchema.targets" to "gemini,openai,mistral")
 
         // When processing the options...
         val configuration = processor.process(options)
 
         // We expect an error naming the unknown target and the valid ones, and the defaults kept:
-        verify { logger.error("Unknown targets [openai] in 'jsonSchema.targets'. Valid targets are: [gemini]", null) }
+        verify { logger.error("Unknown targets [mistral] in 'jsonSchema.targets'. Valid targets are: [gemini, openai]", null) }
         assertEquals(SchemaTarget.entries.toSet(), configuration.dialects)
     }
 

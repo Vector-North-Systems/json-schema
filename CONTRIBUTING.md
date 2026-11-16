@@ -3,7 +3,7 @@ Thanks for your interest in improving the project! Bug reports, feature ideas an
 
 ## Reporting bugs and requesting features
 Open an issue. For a bug, include the annotated class, the schema you expected and the one generated (or the build
-error), plus your Kotlin and KSP versions. Check the [pending features](README.md#pendingpossible-next-features) first,
+error), plus your Kotlin and KSP versions. Check the [roadmap](docs/roadmap.md) first,
 since some are already planned.
 
 For larger changes, open an issue to discuss the approach before writing the code.
@@ -42,7 +42,8 @@ The processor runs when `json-schema-tests` builds, so tests work through fixtur
 Errors fail the build, so they can't be fixtures. Check them with a temporary fixture, confirm the message and the
 location in the build output, and delete it before committing.
 
-The examples in the README are copied in `fixtures/readme/Readme.kt` and checked by `ReadmeTest`. Update both together.
+The examples in the README, and the ones the docs share with it, are copied in `fixtures/readme/Readme.kt` and checked
+by `ReadmeTest`. Update both together.
 
 ## Branches and pull requests
 `main` is always releasable. Work on a short-lived branch from `main`, for example `fix/nested-defs` or
@@ -50,10 +51,11 @@ The examples in the README are copied in `fixtures/readme/Readme.kt` and checked
 `./gradlew build` passes. Releases are tagged on `main`; see [RELEASING.md](RELEASING.md).
 
 ## Guidelines
-- Generated schemas follow the
-  [subset of JSON Schema that Gemini supports](https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support).
-  Check new keywords against it.
-- Add a fixture and a test for every feature or fix, and document user-facing changes in the README.
+- Generated schemas follow the subset of JSON Schema each provider supports, linked from
+  [Dialects](docs/reference/targets.md#targets). Check new keywords against every dialect.
+- Add a fixture and a test for every feature or fix, and document user-facing changes in [`docs`](docs/README.md). The README only
+  covers what the library is for, the dialects and basic usage.
+- A new dialect adds to the pages listed in [How the pages are organized](docs/README.md#how-the-pages-are-organized).
 - Add an entry under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
 - Follow the [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html).
 

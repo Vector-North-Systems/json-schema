@@ -2,6 +2,7 @@ package com.vectornorthsystems.fixtures
 
 import com.vectornorthsystems.jsonschema.SchemaRequired
 import com.vectornorthsystems.jsonschema.SchemaRoot
+import com.vectornorthsystems.jsonschema.SchemaTarget
 
 /**
  * Typealias, resolved to the underlying type (String in this case).
@@ -26,14 +27,22 @@ data class Profile(
 )
 
 /**
- * Nullable enums list `null` among their values, whether they're required, list items or map values. The same enum
- * used without `?`, even inside a nullable collection, doesn't.
+ * Nullable enums list `null` among their values, whether they're required or list items.
+ * The same enum used without `?`, even inside a nullable collection, doesn't.
  */
 @SchemaRoot
 data class UnitPreferences(
     val system: UnitSystem?,
     val fallback: UnitSystem,
     val history: List<UnitSystem?>,
-    val bySite: Map<String, UnitSystem?>,
     val preferred: List<UnitSystem>? = null,
+)
+
+/**
+ * Nullable enums also list `null` among their values as map values. Maps aren't supported by OpenAI, so this is
+ * generated for Gemini only.
+ */
+@SchemaRoot(targets = [SchemaTarget.GEMINI])
+data class UnitsBySite(
+    val bySite: Map<String, UnitSystem?>,
 )

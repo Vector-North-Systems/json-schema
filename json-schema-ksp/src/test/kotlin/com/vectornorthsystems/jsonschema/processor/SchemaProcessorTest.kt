@@ -34,9 +34,17 @@ class SchemaProcessorTest {
     private val generator = mockk<SchemaObjectGenerator>(relaxed = true)
 
     /**
-     * The schema of a class without properties, as every dialect writes it today.
+     * The schema of a class without properties, as Gemini writes it.
      */
     private val emptyObject = """{"type":"object","properties":{}}"""
+
+    /**
+     * The schema of a class without properties in [target]: OpenAI's strict mode also forbids additional properties.
+     */
+    private fun emptyObject(target: SchemaTarget) = when (target) {
+        SchemaTarget.GEMINI -> emptyObject
+        SchemaTarget.OPENAI -> """{"type":"object","properties":{},"additionalProperties":false}"""
+    }
 
     private fun processor(dialects: Set<SchemaTarget> = SchemaTarget.entries.toSet()) =
         SchemaProcessor(generator, Configuration(dialects), logger)
@@ -89,7 +97,7 @@ class SchemaProcessorTest {
         // We expect its object generated with the default name, a schema for every dialect in their order, and
         // nothing deferred:
         verify {
-            generator.generate(star, "StarSchema", SchemaTarget.entries.map { TargetSchema(it, emptyObject) })
+            generator.generate(star, "StarSchema", SchemaTarget.entries.map { TargetSchema(it, emptyObject(it)) })
         }
         assertEquals(emptyList(), deferred)
         verify(exactly = 0) { logger.error(any(), any()) }
@@ -195,7 +203,7 @@ class SchemaProcessorTest {
 
         // We expect every dialect of the module:
         verify {
-            generator.generate(star, "StarSchema", SchemaTarget.entries.map { TargetSchema(it, emptyObject) })
+            generator.generate(star, "StarSchema", SchemaTarget.entries.map { TargetSchema(it, emptyObject(it)) })
         }
     }
 
