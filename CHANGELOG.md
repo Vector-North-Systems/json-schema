@@ -7,6 +7,8 @@ or the API (annotations).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
 ### Added
 - The `OPENAI` dialect, for OpenAI Structured Outputs in strict mode. Every `@SchemaRoot` class gets an `OPENAI`
   constant next to `GEMINI`. In this dialect every property is required, whether or not it has a default, every
