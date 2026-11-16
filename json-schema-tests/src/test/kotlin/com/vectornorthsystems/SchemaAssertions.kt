@@ -38,20 +38,21 @@ internal fun assertSchema(expected: String, actual: String) {
  * @param schemaOf The generated object's `getOrNull`, such as `ComplexSchema::getOrNull`.
  */
 internal fun assertSchemas(name: String, schemaOf: (SchemaTarget) -> String?) {
-    val failures = SchemaTarget.entries.mapNotNull { target ->
-        val path = expectedSchemaPath(target, name)
-        val expected = SchemaResources::class.java.classLoader.getResource(path)?.readText()
-        val actual = schemaOf(target)
+    val failures = SchemaTarget.entries
+        .mapNotNull { target ->
+            val path = expectedSchemaPath(target, name)
+            val expected = SchemaResources::class.java.classLoader.getResource(path)?.readText()
+            val actual = schemaOf(target)
 
-        when {
-            expected == null && actual == null -> null
-            expected == null -> "$name has a $target schema, but $RESOURCES/$path doesn't exist. Generated:\n$actual"
-            actual == null -> "$RESOURCES/$path exists, but $name has no $target schema"
-            else -> runCatching { assertSchema(expected, actual) }
-                .exceptionOrNull()
-                ?.let { "$name doesn't match $RESOURCES/$path: ${it.message}" }
+            when {
+                expected == null && actual == null -> null
+                expected == null -> "$name has a $target schema, but $RESOURCES/$path doesn't exist. Generated:\n$actual"
+                actual == null -> "$RESOURCES/$path exists, but $name has no $target schema"
+                else -> runCatching { assertSchema(expected, actual) }
+                    .exceptionOrNull()
+                    ?.let { "$name doesn't match $RESOURCES/$path: ${it.message}" }
+            }
         }
-    }
 
     if (failures.isNotEmpty()) fail(failures.joinToString("\n\n"))
 }

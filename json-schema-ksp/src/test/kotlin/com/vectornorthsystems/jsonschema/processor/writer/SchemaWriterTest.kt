@@ -1,13 +1,7 @@
 package com.vectornorthsystems.jsonschema.processor.writer
 
 import com.vectornorthsystems.jsonschema.processor.PrimitiveType
-import com.vectornorthsystems.jsonschema.processor.node.ArrayNode
-import com.vectornorthsystems.jsonschema.processor.node.MapNode
-import com.vectornorthsystems.jsonschema.processor.node.Node
-import com.vectornorthsystems.jsonschema.processor.node.ObjectNode
-import com.vectornorthsystems.jsonschema.processor.node.PrimitiveNode
-import com.vectornorthsystems.jsonschema.processor.node.PropertyNode
-import com.vectornorthsystems.jsonschema.processor.node.RefNode
+import com.vectornorthsystems.jsonschema.processor.node.*
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -280,7 +274,7 @@ class SchemaWriterTest {
         fun nullableColor() = PrimitiveNode(PrimitiveType.STRING, enum = listOf("RED")).apply { nullable = true }
         val root = root(
             property("history", ArrayNode(nullableColor())),
-            property("bySite", MapNode(nullableColor())),
+            property("bySite", MapNode(nullableColor(), mockk(relaxed = true))),
         )
 
         // When writing...
@@ -445,11 +439,31 @@ class SchemaWriterTest {
     }
 
     @Test
+    fun `additionalProperties is written when set, before required, and left out otherwise`() {
+        // Given a root that forbids additional properties, with a nested object that allows them and one that doesn't say:
+        val root = root(
+            property("open", ObjectNode("Open", additionalProperties = true)),
+            property("unset", ObjectNode("Unset")),
+        ).apply { additionalProperties = false }
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect `false` and `true` where set, and nothing for the object that leaves it unset:
+        assertEquals(
+            """{"type":"object","properties":{"open":{"type":"object","properties":{},"additionalProperties":true},""" +
+                    """"unset":{"type":"object","properties":{}}},"additionalProperties":false,""" +
+                    """"required":["open","unset"]}""",
+            schema
+        )
+    }
+
+    @Test
     fun `a map describes its values as additional properties`() {
         // Given a nullable map of strings to integers, and a map of arrays:
         val root = root(
-            property("scores", MapNode(integer()).apply { nullable = true }),
-            property("groups", MapNode(ArrayNode(string()))),
+            property("scores", MapNode(integer(), mockk(relaxed = true)).apply { nullable = true }),
+            property("groups", MapNode(ArrayNode(string()), mockk(relaxed = true))),
         )
 
         // When writing...
@@ -613,6 +627,78 @@ class SchemaWriterTest {
         assertEquals(
             $$"""{"type":"object","properties":{"head":{"title":"Head","$ref":"#/$defs/Node"}},""" +
                     $$""""required":["head"],"$defs":{"Node":{"type":"object","properties":{}}}}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `a described reference marked to be wrapped goes inside anyOf`() {
+        // Given a recursive object, used by a property with a title and by one with a description, both marked:
+        val node = ObjectNode("Node").apply { referenced = true }
+        val root = root(
+            // The object's first use, which is where the visitor leaves the object itself.
+            property("head", node).apply { title = "Head"; wrapDescribedReference = true },
+            property("tail", RefNode(node)).apply { description = "The last one"; wrapDescribedReference = true },
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect each reference alone inside anyOf, with the title or the description outside:
+        assertEquals(
+            $$"""{"type":"object","properties":{"head":{"title":"Head","anyOf":[{"$ref":"#/$defs/Node"}]},""" +
+                    $$""""tail":{"description":"The last one","anyOf":[{"$ref":"#/$defs/Node"}]}},""" +
+                    $$""""required":["head","tail"],"$defs":{"Node":{"type":"object","properties":{}}}}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `a described reference to the root marked to be wrapped goes inside anyOf`() {
+        // Given a root with a described reference to itself, marked:
+        val root = ObjectNode("Root", isRoot = true).apply { referenced = true }
+        root.properties += property("self", RefNode(root)).apply { description = "Itself"; wrapDescribedReference = true }
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect the reference to the document inside anyOf:
+        assertEquals(
+            $$"""{"type":"object","properties":{"self":{"description":"Itself","anyOf":[{"$ref":"#"}]}},""" +
+                    """"required":["self"]}""",
+            schema
+        )
+    }
+
+    @Test
+    fun `marking a property only changes described references that aren't nullable`() {
+        // Given marked properties that have nothing to wrap:
+        val node = ObjectNode("Node").apply { referenced = true }
+        val root = root(
+            // A reference with nothing next to it.
+            property("plain", node).apply { wrapDescribedReference = true },
+            // A nullable reference, already inside anyOf.
+            property("nullable", RefNode(node).apply { nullable = true }).apply {
+                description = "Maybe"
+                wrapDescribedReference = true
+            },
+            // A described array of references: the description is next to the array, not to the reference.
+            property("list", ArrayNode(RefNode(node))).apply { description = "Many"; wrapDescribedReference = true },
+            // A described type that isn't a reference.
+            property("name", string()).apply { description = "Name"; wrapDescribedReference = true },
+        )
+
+        // When writing...
+        val schema = root.schema
+
+        // We expect them as they'd be without the mark:
+        assertEquals(
+            $$"""{"type":"object","properties":{"plain":{"$ref":"#/$defs/Node"},""" +
+                    $$""""nullable":{"description":"Maybe","anyOf":[{"$ref":"#/$defs/Node"},{"type":"null"}]},""" +
+                    $$""""list":{"description":"Many","type":"array","items":{"$ref":"#/$defs/Node"}},""" +
+                    """"name":{"description":"Name","type":"string"}},""" +
+                    $$""""required":["plain","nullable","list","name"],""" +
+                    $$""""$defs":{"Node":{"type":"object","properties":{}}}}""",
             schema
         )
     }

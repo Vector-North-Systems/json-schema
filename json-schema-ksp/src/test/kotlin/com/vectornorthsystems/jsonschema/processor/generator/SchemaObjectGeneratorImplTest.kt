@@ -39,12 +39,13 @@ class SchemaObjectGeneratorImplTest {
     )
 
     private val gemini = TargetSchema(SchemaTarget.GEMINI, """{"type":"object"}""")
+    private val openAi = TargetSchema(SchemaTarget.OPENAI, """{"type":"object","additionalProperties":false}""")
 
     // region source
 
     @Test
     fun `dialects that aren't generated give null, and fail in get with a hint`() {
-        // Given no schemas, the only way to leave dialects out while SchemaTarget has a single one:
+        // Given no schemas:
         val schemas = emptyList<TargetSchema>()
 
         // When building the source...
@@ -67,6 +68,7 @@ class SchemaObjectGeneratorImplTest {
                 /**
                  * The schema of [target], or null if it isn't generated for [Star].
                  */
+                @Suppress("REDUNDANT_ELSE_IN_WHEN")
                 fun getOrNull(target: SchemaTarget): String? = when (target) {
                     else -> null
                 }
@@ -141,15 +143,74 @@ class SchemaObjectGeneratorImplTest {
     }
 
     @Test
-    fun `every dialect generated gives a constant each and an exhaustive getOrNull`() {
+    fun `every dialect generated gives a constant each and a getOrNull that still has an else`() {
         // Given a schema for every dialect:
+        val schemas = listOf(gemini, openAi)
+
+        // When building the source...
+        val source = source(schemas)
+
+        // We expect a public object with one constant per dialect, a branch for each in getOrNull, an `else` giving
+        // null for the dialects of a newer SchemaTarget, and get listing the dialects it has:
+        val quotes = "\"\"\""
+        assertEquals(
+            $$"""
+            package com.example
+
+            import com.vectornorthsystems.jsonschema.SchemaTarget
+
+            /**
+             * Generated schemas for [Star], one per dialect.
+             *
+             * @see [com.example.Star]
+             */
+            object StarSchema {
+                /**
+                 * The schema for the GEMINI dialect.
+                 */
+                const val GEMINI: String = $$quotes{"type":"object"}$$quotes
+
+                /**
+                 * The schema for the OPENAI dialect.
+                 */
+                const val OPENAI: String = $$quotes{"type":"object","additionalProperties":false}$$quotes
+
+                /**
+                 * The schema of [target], or null if it isn't generated for [Star].
+                 */
+                @Suppress("REDUNDANT_ELSE_IN_WHEN")
+                fun getOrNull(target: SchemaTarget): String? = when (target) {
+                    SchemaTarget.GEMINI -> GEMINI
+                    SchemaTarget.OPENAI -> OPENAI
+                    else -> null
+                }
+
+                /**
+                 * The schema of [target].
+                 *
+                 * @throws IllegalArgumentException If [target] isn't generated for [Star].
+                 */
+                operator fun get(target: SchemaTarget): String = getOrNull(target)
+                    ?: throw IllegalArgumentException(
+                        "StarSchema has no $target schema, only GEMINI, OPENAI. Add ${target.name.lowercase()} to the " +
+                            "jsonSchema.targets KSP option, or $target to @SchemaRoot(targets = ...) on Star."
+                    )
+            }
+
+            """.trimIndent(),
+            source
+        )
+    }
+
+    @Test
+    fun `some dialects generated give a branch each and null for the others`() {
+        // Given a schema for Gemini only:
         val schemas = listOf(gemini)
 
         // When building the source...
         val source = source(schemas)
 
-        // We expect a public object with one constant per dialect, a branch for each in getOrNull with no `else`, and
-        // get listing the dialects it has:
+        // We expect a constant and a branch for Gemini, an `else` giving null for the rest, and get listing Gemini:
         val quotes = "\"\"\""
         assertEquals(
             $$"""
@@ -171,8 +232,10 @@ class SchemaObjectGeneratorImplTest {
                 /**
                  * The schema of [target], or null if it isn't generated for [Star].
                  */
+                @Suppress("REDUNDANT_ELSE_IN_WHEN")
                 fun getOrNull(target: SchemaTarget): String? = when (target) {
                     SchemaTarget.GEMINI -> GEMINI
+                    else -> null
                 }
 
                 /**

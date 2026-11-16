@@ -98,6 +98,8 @@ annotation class SchemaDescription(val text: String)
  * Marks a property the AI model must include, even though it has a default.
  * Primary constructor parameters without a default are already required, since a decoder can't build the object
  * without them. Properties with a default, or declared in the class body, are optional unless annotated with this.
+ *
+ * It has no effect in the dialects where every property is already required, such as [SchemaTarget.OPENAI].
  */
 @Target(AnnotationTarget.PROPERTY)
 annotation class SchemaRequired

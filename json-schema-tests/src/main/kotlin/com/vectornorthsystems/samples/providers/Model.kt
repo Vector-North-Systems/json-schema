@@ -1,4 +1,6 @@
-package com.vectornorthsystems.samples
+package com.vectornorthsystems.samples.providers
+
+import com.vectornorthsystems.jsonschema.SchemaTarget
 
 /**
  * A model that answers in JSON matching a schema.
@@ -11,4 +13,9 @@ interface Model : AutoCloseable {
      * the schema.
      */
     suspend fun generate(input: String, schema: String): String
+
+    /**
+     * The target dialect this model supports and expects.
+     */
+    val target: SchemaTarget
 }

@@ -88,18 +88,23 @@ internal class SchemaObjectGeneratorImpl(
             appendLine()
         }
 
-        // Only the generated dialects get a branch, and the others give null, instead of the `when` not compiling.
-        // With every dialect generated there's no `else`, so the `when` stays exhaustive.
+        // Only the generated dialects get a branch, and the others give null.
+        // The `else` is written even when every dialect has a branch. The `when` is only exhaustive for the
+        // SchemaTarget this object is compiled against: an app can run it with a newer json-schema-annotations,
+        // brought in by another dependency, that has more dialects. Without the `else`, asking for one of those would
+        // throw a NoWhenBranchMatchedException instead of returning null, and `get` would throw that instead of its
+        // IllegalArgumentException.
+        // The compiler reports that `else` as redundant when every dialect has a branch, so the warning is suppressed:
+        // it would show in every build, and fail the ones that treat warnings as errors.
         appendLine("    /**")
         appendLine("     * The schema of [target], or null if it isn't generated for [$className].")
         appendLine("     */")
+        appendLine("    @Suppress(\"REDUNDANT_ELSE_IN_WHEN\")")
         appendLine("    fun getOrNull(target: SchemaTarget): String? = when (target) {")
         schemas.forEach { (target, _) ->
             appendLine("        SchemaTarget.${target.name} -> ${target.name}")
         }
-        if (schemas.map { it.target }.toSet() != SchemaTarget.entries.toSet()) {
-            appendLine("        else -> null")
-        }
+        appendLine("        else -> null")
         appendLine("    }")
         appendLine()
 

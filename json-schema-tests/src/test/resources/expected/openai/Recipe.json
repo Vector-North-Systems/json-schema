@@ -1,0 +1,77 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "amount",
+              "unit"
+            ]
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "quantity",
+          "optional"
+        ]
+      }
+    },
+    "instructions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stepNumber": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "stepNumber",
+          "description"
+        ]
+      }
+    },
+    "unitSystem": {
+      "type": "string",
+      "enum": [
+        "METRIC",
+        "IMPERIAL"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "ingredients",
+    "instructions",
+    "unitSystem"
+  ]
+}

@@ -1,7 +1,6 @@
 package com.vectornorthsystems.jsonschema.processor.transformers
 
 import com.google.devtools.ksp.symbol.KSNode
-import com.vectornorthsystems.jsonschema.SchemaTarget
 import com.vectornorthsystems.jsonschema.processor.PrimitiveType
 import com.vectornorthsystems.jsonschema.processor.node.*
 import io.mockk.mockk
@@ -12,9 +11,6 @@ import kotlin.test.*
  * It changes nothing, so it also stands for the base itself, which is abstract.
  */
 internal class TestTransformerImpl : BaseTransformerImpl() {
-    // Any dialect: the base copies the tree the same way for all of them.
-    override val target = SchemaTarget.GEMINI
-
     val visited = mutableListOf<Node>()
 
     override fun transformProperty(node: PropertyNode) = super.transformProperty(node).also { visited += node }
@@ -134,7 +130,7 @@ class BaseTransformerImplTest {
                 minItems = 1
                 maxItems = 3
             }.common()),
-            property("scores", MapNode(PrimitiveNode(PrimitiveType.NUMBER)).common()),
+            property("scores", MapNode(PrimitiveNode(PrimitiveType.NUMBER), mockk(relaxed = true)).common()),
             property("color", color.common()),
             property("expansions", ArrayNode(RefNode(root).common())),
         ).map { it.common() }
@@ -190,7 +186,7 @@ class BaseTransformerImplTest {
         val nodes = listOf(
             PrimitiveNode(PrimitiveType.BOOLEAN),
             ArrayNode(PrimitiveNode(PrimitiveType.STRING)),
-            MapNode(PrimitiveNode(PrimitiveType.STRING)),
+            MapNode(PrimitiveNode(PrimitiveType.STRING), mockk(relaxed = true)),
             ObjectNode(name = "Empty"),
             property("flag", PrimitiveNode(PrimitiveType.BOOLEAN)),
         )
@@ -305,7 +301,10 @@ class BaseTransformerImplTest {
     @Test
     fun transformMapNode() {
         // Given a map of arrays of booleans:
-        val source = MapNode(ArrayNode(PrimitiveNode(PrimitiveType.BOOLEAN)).common()).common()
+        val source = MapNode(
+            ArrayNode(PrimitiveNode(PrimitiveType.BOOLEAN)).common(),
+            mockk(relaxed = true)
+        ).common()
 
         // When transforming...
         val copy = TestTransformerImpl().transformMapNode(source)

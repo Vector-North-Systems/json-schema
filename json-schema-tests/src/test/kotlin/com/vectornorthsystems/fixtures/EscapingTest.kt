@@ -13,7 +13,7 @@ class EscapingTest {
             .getValue("properties").jsonObject.getValue("value").jsonObject
         assertEquals((0..31).map { it.toChar() }.joinToString(""), property.getValue("title").jsonPrimitive.content)
         assertEquals(
-            "Quotes: \"\"\"; slash: \\; Unicode: café 雪 😀; template: \$name \${value}",
+            $$"Quotes: \"\"\"; slash: \\; Unicode: café 雪 😀; template: $name ${value}",
             property.getValue("description").jsonPrimitive.content
         )
     }
@@ -23,7 +23,7 @@ class EscapingTest {
         val property = Json.parseToJsonElement(DollarsSchema.GEMINI).jsonObject
             .getValue("properties").jsonObject.getValue("value").jsonObject
         assertEquals(
-            "price: \$\${amount}, \$\$\$, \${name} and \$name",
+            $$$"price: $${amount}, $$$, ${name} and $name",
             property.getValue("description").jsonPrimitive.content
         )
     }

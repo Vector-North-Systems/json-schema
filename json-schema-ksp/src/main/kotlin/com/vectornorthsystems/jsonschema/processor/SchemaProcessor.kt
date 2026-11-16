@@ -60,7 +60,12 @@ internal class SchemaProcessor(
                 val schemas = symbol.dialects(logger)
                     .orDefaults(configuration.dialects)
                     .sortedBy { target -> target.ordinal }
-                    .map { target -> TargetSchema(target, target.transformer().transform(root).schema) }
+                    .map { target ->
+                        TargetSchema(
+                            target = target,
+                            json = target.transformer(logger).transform(root).schema
+                        )
+                    }
 
                 schemaObjectGenerator.generate(symbol, objectName, schemas)
             }

@@ -302,14 +302,14 @@ class KsExtensionsTest {
     fun `an unknown target is an error pointing at the class`() {
         // Given a root asking for a target this processor doesn't know, next to a known one:
         val logger = mockk<KSPLogger>(relaxed = true)
-        val root = rootWithTargets(arrayOf(ksEntry("GEMINI"), ksEntry("OPENAI")))
+        val root = rootWithTargets(arrayOf(ksEntry("GEMINI"), ksEntry("MISTRAL")))
 
         // When reading its targets...
         val targets = root.dialects(logger)
 
         // We expect an error at the class naming the unknown target:
         verify {
-            logger.error("@SchemaRoot(targets) has an unknown target 'OPENAI'. Valid targets are: [GEMINI]", root)
+            logger.error("@SchemaRoot(targets) has an unknown target 'MISTRAL'. Valid targets are: [GEMINI, OPENAI]", root)
         }
         assertEquals(setOf(SchemaTarget.GEMINI), targets)
     }

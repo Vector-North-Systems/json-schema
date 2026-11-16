@@ -1,5 +1,6 @@
-package com.vectornorthsystems.samples
+package com.vectornorthsystems.samples.providers
 
+import com.vectornorthsystems.jsonschema.SchemaTarget
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.request.*
@@ -52,6 +53,9 @@ class Gemini(
             .filter { it["type"]?.jsonPrimitive?.content == "text" }
             .joinToString("") { it.getValue("text").jsonPrimitive.content }
     }
+
+    override val target: SchemaTarget
+        get() = SchemaTarget.GEMINI
 
     override fun close() = client.close()
 }

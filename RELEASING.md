@@ -23,7 +23,7 @@ Snapshots are only published to the local Maven repository.
    - Set `version=<version>` in `gradle.properties`.
    - In `CHANGELOG.md`, rename `[Unreleased]` to `[<version>] - <YYYY-MM-DD>` and add a new empty `[Unreleased]`
      section above it.
-   - Update the version in the README's Installation section.
+   - Update the version in the README's Installation section, and in `docs/getting-started.md`.
    - Commit as `Release <version>`, and merge it into `main` through a pull request.
 3. Tag the merged commit and push only the tag. A squash or rebase merge changes the commit's SHA, so tag
    `origin/main`, not the branch:

@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "properties": {
+    "destination": {
+      "description": "Where the parcel is delivered",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Depot"
+        }
+      ]
+    },
+    "origin": {
+      "title": "Sender",
+      "description": "Where the parcel is sent from",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Depot"
+        }
+      ]
+    },
+    "returnTo": {
+      "description": "Where the parcel goes back to",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Depot"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stops": {
+      "description": "The depots on the way",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Depot"
+      }
+    },
+    "customs": {
+      "$ref": "#/$defs/Depot"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "destination",
+    "origin",
+    "returnTo",
+    "stops",
+    "customs"
+  ],
+  "$defs": {
+    "Depot": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "city"
+      ]
+    }
+  }
+}

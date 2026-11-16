@@ -1,12 +1,13 @@
 # ksp-dialect-gemini
 
-Checks that a real Gradle build using the `jsonSchema.targets` KSP option works as expected. And this particular
-submodule should build only the `GEMINI` dialect.
+Checks that a real Gradle build using the `jsonSchema.targets` KSP option works as expected.
+See the `build.gradle.kts` file for the particular option tested here.
 
 With this, we expect to verify:
 - An unknown or empty value fails the build, so if this module builds, the option was accepted.
-- The tests check the dialects the option lists are generated (unless overridden, of course). Once `SchemaTarget` has a
-second dialect, it should also check the ones it leaves out aren't generated (Coming soon).
+- Only the dialect the option lists is generated.
+- The options left out aren't generated.
+- Schema dialects overridden from `SchemaRoot` are generated.
 
 ## Adding a module for another option
 

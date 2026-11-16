@@ -1,7 +1,10 @@
 package com.vectornorthsystems.jsonschema.processor.visitor
 
 import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.visitor.KSDefaultVisitor
 import com.vectornorthsystems.jsonschema.SchemaRequired
 import com.vectornorthsystems.jsonschema.SchemaRoot
@@ -186,7 +189,7 @@ internal class SchemaVisitor(
             logger.error("Map keys must be String, found ${shape.key} in $type", symbol)
         }
 
-        return MapNode(schemaFor(type = shape.value, symbol = symbol))
+        return MapNode(declaration = schemaFor(type = shape.value, symbol = symbol), source = symbol)
     }
 
     /**
