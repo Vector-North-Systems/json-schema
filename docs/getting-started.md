@@ -24,8 +24,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.vectornorthsystems:json-schema-annotations:0.3.0")
-    ksp("com.vectornorthsystems:json-schema-ksp:0.3.0")
+    implementation("com.vectornorthsystems:json-schema-annotations:0.4.0")
+    ksp("com.vectornorthsystems:json-schema-ksp:0.4.0")
 }
 ```
 
