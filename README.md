@@ -1,6 +1,7 @@
 # Kotlin JSON Schema Generator
 [![Maven Central](https://img.shields.io/maven-central/v/com.vectornorthsystems/json-schema-annotations)](https://central.sonatype.com/artifact/com.vectornorthsystems/json-schema-annotations)
 [![CI](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://vector-north-systems.github.io/json-schema/coverage.json)](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.txt)
 
 Generates [JSON Schemas](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time, using

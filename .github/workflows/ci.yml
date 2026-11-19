@@ -18,4 +18,42 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-      - run: ./gradlew clean build
+      - run: ./gradlew clean build :json-schema-ksp:koverXmlReport
+      - name: Write the coverage badge
+        # A shields.io endpoint for the processor's line coverage, rounded down so the badge never shows 100% while a
+        # line is missed. Written on pull requests too, so a broken script fails before it reaches main.
+        run: |
+          mkdir -p "$RUNNER_TEMP/badge"
+          python3 - <<'EOF' > "$RUNNER_TEMP/badge/coverage.json"
+          import json, math, xml.etree.ElementTree as ET
+          report = ET.parse("json-schema-ksp/build/reports/kover/report.xml").getroot()
+          line = next(c for c in report.findall("counter") if c.get("type") == "LINE")
+          covered, missed = int(line.get("covered")), int(line.get("missed"))
+          percent = math.floor(1000 * covered / (covered + missed)) / 10
+          color = next(c for limit, c in [(90, "brightgreen"), (80, "green"), (70, "yellow"), (60, "orange"), (0, "red")]
+                       if percent >= limit)
+          print(json.dumps({"schemaVersion": 1, "label": "coverage", "message": f"{percent:g}%", "color": color}))
+          EOF
+          cat "$RUNNER_TEMP/badge/coverage.json"
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: ${{ runner.temp }}/badge
+
+  # Deploys the badge to GitHub Pages. This job runs no project code, and its token can deploy Pages but not write to
+  # the repository.
+  badge:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}coverage.json
+    concurrency:
+      group: pages
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
