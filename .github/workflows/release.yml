@@ -26,6 +26,9 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          # Releases build from a clean state, so a poisoned cache from a main build can't run with the signing key.
+          cache-disabled: true
       - name: Check the tag matches gradle.properties
         env:
           TAG: ${{ inputs.ref || github.ref_name }}
