@@ -4,16 +4,13 @@
 [![Coverage](https://img.shields.io/endpoint?url=https://vector-north-systems.github.io/json-schema/coverage.json)](https://github.com/Vector-North-Systems/json-schema/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.txt)
 
-Generates [JSON Schemas](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time, using
-[KSP](https://kotlinlang.org/docs/ksp-overview.html). The schemas are produced in the dialect each AI provider accepts for structured output.
+Generates [JSON Schemas](https://json-schema.org/overview/what-is-jsonschema) from Kotlin classes at compile time,
+using [KSP](https://kotlinlang.org/docs/ksp-overview.html). The schemas are produced in the dialect that each AI provider
+accepts for structured output.
 
-Annotate the class that describes the model's answer:
+Annotate the class to obtain the schemas from:
 
 ```kotlin
-data class Ingredient(
-    val name: String
-)
-
 @SchemaRoot
 data class Recipe(
     val instructions: String,
@@ -22,31 +19,38 @@ data class Recipe(
 )
 ```
 
-The build generates its schema for each provider, as string constants:
+The build generates the schemas, one for each supported provider:
 
 ```kotlin
 RecipeSchema.GEMINI   // {"type":"object","properties":{"instructions":{"type":"string"},...
 RecipeSchema.OPENAI   // The same class, following OpenAI's rules.
 ```
 
-Send the one for your provider with the request, and decode the answer into the same class:
+Use one when requesting structured output from the corresponding provider, and decode the answer into the same class:
 
 ```kotlin
 val recipe = Json.decodeFromString<Recipe>(answer)
 ```
 
 ## What it's for
-With structured output, you send a JSON Schema with a request, and the AI model answers with JSON that follows it.
-You already have the Kotlin classes that answer is decoded into, so a schema written by hand repeats them, and has to
-be kept in sync. And each provider accepts a different subset of JSON Schema, with its own rules, so one schema
-doesn't work everywhere. See [why this library](docs/why.md) exists and the problems it tries to solve.
+Structured output helps you obtain a response from an AI provider in a predefined format, making it easier to decode.
+This feature, supported by most providers, moves the burden of parsing and formatting the response to the provider's own
+pipeline instead of the client. It works like this: in the request, we supply a JSON schema that describes the shape of
+the response data.
 
-This library generates the schemas from the classes:
+The client's responsibility then is to keep the supplied schema in sync with the code, so decoding the response never fails.
+
+With code already following the response shape, maintaining the corresponding schema is repetitive. To complicate things,
+each AI provider accepts a different subset of JSON schema, with different rules, so one schema may not work everywhere.
+
+The natural way to solve this is to generate the schemas from the classes:
 
 - **Your classes are the single source of truth.** Change a class, and the next build regenerates its schemas.
-- **Each provider's rules are applied for you.** When a provider can't express something in a class, the build fails
-  and says why, instead of the request.
+- **Provider's rules are applied for you.** When a provider can’t express something in a class, the build fails and
+says why, instead of the request.
 - **No reflection and no runtime dependency.** Each schema is a string constant, built at compile time.
+
+See [why this library](docs/why.md) exists to learn more.
 
 ## Supported dialects
 | Provider      | `SchemaTarget` | Follows                                                                                                                                         | Guide                           |
@@ -71,8 +75,8 @@ dependencies {
 }
 ```
 
-Both artifacts are on Maven Central. Requires JDK 17 or later. See [Getting started](docs/getting-started.md) for the
-details and the options.
+Both artifacts are on Maven Central. Requires JDK 17 or later. See [Getting started](docs/getting-started.md) for more
+details and options.
 
 ## Usage
 Following the example above:
@@ -96,7 +100,7 @@ object RecipeSchema {
 }
 ```
 
-A schema is a string of JSON, which goes in the request to the provider. The [Gemini](docs/guides/gemini.md) and
+A schema is a string of JSON, ready to use in the request to the provider. The [Gemini](docs/guides/gemini.md) and
 [OpenAI](docs/guides/openai.md) guides show where, with the whole request. To pick the provider at runtime, use
 `RecipeSchema[target]`; see [Runtime targets](docs/guides/runtime-targets.md).
 
@@ -124,8 +128,8 @@ The schemas are minified; they're formatted here for readability. `RecipeSchema.
 }
 ```
 
-`isColdDish` has a default, so it is not required and Gemini may leave it out. OpenAI's strict mode requires every property and forbids
-additional ones, so `RecipeSchema.OPENAI` differs in these lines:
+Note that `isColdDish` has a default, so it is not required and Gemini may leave it out. OpenAI's strict mode requires
+every property and forbids additional ones, so `RecipeSchema.OPENAI` differs in these lines:
 
 ```diff
          "properties": {
@@ -143,15 +147,15 @@ additional ones, so `RecipeSchema.OPENAI` differs in these lines:
  }
 ```
 
-You don't write either by hand, or keep track of the rules: they come from the class and the dialect. See
-[Dialects](docs/reference/targets.md) for everything that differs.
+You don't write either by hand, and you don't need to keep track of the rules: they come from the class and the dialect.
+See [Dialects](docs/reference/targets.md) for everything that differs.
 
 ### Descriptions and constraints
-Structured output systems allow special properties to be used in the schema, to hint or force the
- model output format on certain fields. For example, `"description"` describes a property for the AI model and `"minItems"`
- establishes the minimum accepted items in a response array.
-Annotations describe a property to the model and constrain its value, such as `@SchemaDescription`, `@SchemaFormat`,
-`@SchemaMinimum` and `@SchemaMaxItems`. See [Annotations](docs/reference/annotations.md) for all of them.
+Structured output systems provide special properties to be used in the schema. These help guide the model or force an
+output format on a field. For example, `"description"` describes a property, and `"minItems"` establishes the minimum
+accepted items in a response array. To support this feature, this library provides annotations such as
+`@SchemaDescription`, `@SchemaFormat`, `@SchemaMinimum`, and `@SchemaMaxItems`.
+See [Annotations](docs/reference/annotations.md) for all of them.
 
 ## Documentation
 | To                                                           | Read                                                             |
@@ -171,4 +175,4 @@ The schemas above are checked by `ReadmeTest` in `json-schema-tests`, and
 [`samples`](json-schema-tests/src/main/kotlin/com/vectornorthsystems/samples) has runnable round trips.
 
 ## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md), and [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md) for what changed in each version.

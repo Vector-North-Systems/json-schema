@@ -31,10 +31,10 @@ dependencies {
 
 ### Kotlin Multiplatform
 The annotations are a JVM library for now, so classes in `commonMain` can't use them yet. See
-[proposal 0003](proposals/0003-kotlin-multiplatform.md) for the plan.
+[proposal 0003](proposals/0003-kotlin-multiplatform.md) for the multiplatform support plan.
 
 ## Options
-Options are KSP arguments, set in the module's build file:
+The processor accepts configuration options as KSP arguments, set in the module’s build file:
 
 ```kotlin
 // build.gradle.kts
@@ -45,12 +45,15 @@ ksp {
 
 | Argument             | Value                                                          | Default       |
 |----------------------|----------------------------------------------------------------|---------------|
-| `jsonSchema.targets` | The dialects to generate in the module, separated by commas    | Every dialect |
+| `jsonSchema.targets` | Sets the dialects to generate in the module, separated by commas    | Every dialect |
 
-If you call a single provider, set `jsonSchema.targets` to it. The build then only checks your classes against that
-dialect's rules; for example, OpenAI doesn't accept maps, so without it a `Map` property fails the build even if you
-never use the OpenAI schema. See [Dialects](reference/targets.md#choosing-the-dialects) for the details, and for
-setting the dialects of a single class.
+Setting only the dialects you use is a good idea, since invalid features on other unused dialects can still cause the
+build to fail unnecessarily. For example, OpenAI doesn't accept maps, which are perfectly valid in the Gemini dialect.
+See [Dialects](reference/targets.md#choosing-the-dialects) for the details, including how to set the dialects of a
+single class from the code.
+
+> [!TIP]
+> Use generally supported features when targeting multiple providers; use different root classes when dialect-specific features are desired.
 
 ## A first schema
 Annotate a class with `@SchemaRoot`:
@@ -78,14 +81,18 @@ object ComplexSchema {
     operator fun get(target: SchemaTarget): String = ...
 }
 ```
+The object will consist of:
 
-- There's a constant per dialect, holding the schema as a minified JSON string.
-- `get` and `getOrNull` pick a dialect at runtime; see [Runtime targets](guides/runtime-targets.md).
-- The object is public, or `internal` when the class is internal or private.
-- To choose the object's name, use `@SchemaRoot(name = "ComplexJsonSchema")`.
-- The source is written to `build/generated/ksp/`, if you want to read it.
+* A string constant per dialect, holding the corresponding schema.
+* Utilities like `getOrNull` and `operator get` to allow selecting the schema at runtime; see [Runtime targets](guides/runtime-targets.md).
 
-Only the root needs `@SchemaRoot`. The classes its properties use are described as part of its schema.
+It is also possible to choose the name of the generated object by using the `name` argument of the annotation, for example:
+```kotlin`
+@SchemaRoot(name = "ComplexJsonSchema")
+```
+
+Only the root needs `@SchemaRoot`. Its properties and corresponding types are described as part of the schema.
+The source is written to `build/generated/ksp/` in case you want to read it.
 
 ## A first request
 A schema is a string, so it goes wherever your HTTP client or SDK takes one. Most APIs want it as a JSON object
@@ -95,7 +102,7 @@ inside the request, so parse it rather than send it as a quoted string. With `ko
 val schema = Json.parseToJsonElement(ComplexSchema.GEMINI)
 ```
 
-Where it goes in the request depends on the provider:
+The schema placement varies by provider.
 
 | Provider | API           | The schema goes in       | Guide                      |
 |----------|---------------|--------------------------|----------------------------|
@@ -112,7 +119,8 @@ data class Complex(val real: Double, val imaginary: Double)
 val complex = Json.decodeFromString<Complex>(answer)
 ```
 
-`@Serializable` is for `kotlinx.serialization`; the library doesn't depend on it, and works with any decoder.
+> [!NOTE]
+> `@Serializable` is for `kotlinx.serialization`; this library doesn't depend on it and works with any decoder.
 
 ## Next
 - [Concepts](concepts.md), for how defaults and nullability shape the schema in each dialect.
